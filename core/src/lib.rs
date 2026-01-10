@@ -1,7 +1,7 @@
-﻿pub mod crawler;
-pub mod queue;
+pub mod crawler;
 pub mod job;
+pub mod queue;
 
 pub use crawler::Crawler;
+pub use job::{CrawlResult, Job, JobConfig, JobStatus};
 pub use queue::JobQueue;
-pub use job::{Job, JobConfig, JobStatus, CrawlResult};
