@@ -1,0 +1,26 @@
+﻿version: '3.8'
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/indexnode
+      - RUST_LOG=info
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      - db
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=indexnode
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
