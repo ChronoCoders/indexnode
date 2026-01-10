@@ -1,18 +1,18 @@
-﻿use indexnode_core::{JobQueue, Crawler, JobStatus};
-use axum::{Router, serve};
+﻿use anyhow::Result;
+use axum::{serve, Router};
+use chrono::Utc;
+use indexnode_core::{Crawler, JobQueue, JobStatus};
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::time::Duration;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use anyhow::Result;
-use chrono::Utc;
 
-mod routes;
-mod handlers;
 mod auth;
-mod models;
 mod db;
+mod handlers;
+mod models;
+mod routes;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,16 +20,18 @@ async fn main() -> Result<()> {
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into())
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let pool = PgPoolOptions::new()
-        .max_connections(10)
+        .max_connections(5)
+        .min_connections(2)
+        .acquire_timeout(Duration::from_secs(3))
+        .idle_timeout(Duration::from_secs(300))
         .connect(&database_url)
         .await?;
 
@@ -81,20 +83,26 @@ async fn run_worker(pool: sqlx::PgPool) -> Result<()> {
                     Ok(links) => {
                         tracing::info!("Crawled {} links for job {}", links.len(), job.id);
 
-                        for link in &links {
-                            let _ = sqlx::query(
-                                "INSERT INTO crawl_results (id, job_id, url, status_code, content_hash, links, created_at) 
-                                 VALUES ($1, $2, $3, $4, $5, $6, $7)"
-                            )
-                            .bind(uuid::Uuid::new_v4())
-                            .bind(job.id)
-                            .bind(link)
-                            .bind(200)
-                            .bind("hash")
-                            .bind(serde_json::json!([]))
-                            .bind(Utc::now())
-                            .execute(&pool)
-                            .await;
+                        if !links.is_empty() {
+                            let mut query_builder = sqlx::QueryBuilder::new(
+                                "INSERT INTO crawl_results (id, job_id, url, status_code, content_hash, links, created_at) "
+                            );
+
+                            query_builder.push_values(links.iter().take(500), |mut b, link| {
+                                b.push_bind(uuid::Uuid::new_v4())
+                                    .push_bind(job.id)
+                                    .push_bind(link)
+                                    .push_bind(200)
+                                    .push_bind("hash")
+                                    .push_bind(serde_json::json!([]))
+                                    .push_bind(Utc::now());
+                            });
+
+                            let result = query_builder.build().execute(&pool).await;
+                            
+                            if let Err(e) = result {
+                                tracing::error!("Failed to insert crawl results: {:?}", e);
+                            }
                         }
 
                         let result_summary = serde_json::json!({
@@ -111,11 +119,13 @@ async fn run_worker(pool: sqlx::PgPool) -> Result<()> {
                         .execute(&pool)
                         .await?;
 
-                        tracing::info!("Job {} completed", job.id);
+                        tracing::info!("Job {} completed successfully", job.id);
                     }
                     Err(e) => {
                         tracing::error!("Job {} failed: {:?}", job.id, e);
-                        queue.update_status(job.id, JobStatus::Failed, Some(e.to_string())).await?;
+                        queue
+                            .update_status(job.id, JobStatus::Failed, Some(e.to_string()))
+                            .await?;
                     }
                 }
             }
