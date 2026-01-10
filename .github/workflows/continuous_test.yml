@@ -1,0 +1,115 @@
+name: Production Continuous Test
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'  # Every 2 minutes
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Set timestamp
+        id: timestamp
+        run: echo "timestamp=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+      
+      - name: Health Check
+        id: health
+        run: |
+          echo "Testing health endpoint..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" https://indexnode-production.up.railway.app/health)
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Health check failed with status $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "✅ Health check passed"
+      
+      - name: Submit Crawl Job
+        id: submit
+        run: |
+          echo "Submitting crawl job..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            https://indexnode-production.up.railway.app/api/v1/jobs \
+            -H "Content-Type: application/json" \
+            -d '{"url":"https://example.com","max_pages":10}')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Job submission failed with status $HTTP_CODE"
+            exit 1
+          fi
+          
+          JOB_ID=$(echo "$BODY" | jq -r '.id')
+          
+          if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
+            echo "❌ Failed to extract job ID"
+            exit 1
+          fi
+          
+          echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
+          echo "✅ Job created: $JOB_ID"
+      
+      - name: Wait for Processing
+        run: |
+          echo "Waiting 15 seconds for job to process..."
+          sleep 15
+      
+      - name: Check Job Status
+        run: |
+          JOB_ID="${{ steps.submit.outputs.job_id }}"
+          echo "Checking status for job: $JOB_ID"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            https://indexnode-production.up.railway.app/api/v1/jobs/$JOB_ID)
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Status check failed with status $HTTP_CODE"
+            exit 1
+          fi
+          
+          STATUS=$(echo "$BODY" | jq -r '.status')
+          
+          echo "Job Status: $STATUS"
+          
+          if [ "$STATUS" = "completed" ]; then
+            echo "✅ Job completed successfully"
+          elif [ "$STATUS" = "processing" ]; then
+            echo "⚠️  Job still processing (may need more time)"
+            exit 1
+          elif [ "$STATUS" = "failed" ]; then
+            echo "❌ Job failed"
+            exit 1
+          else
+            echo "⚠️  Unexpected status: $STATUS"
+            exit 1
+          fi
+      
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "Test completed at: ${{ steps.timestamp.outputs.timestamp }}"
+          echo "Health Check: ${{ steps.health.outcome }}"
+          echo "Job Submit: ${{ steps.submit.outcome }}"
+          echo "Job ID: ${{ steps.submit.outputs.job_id || 'N/A' }}"
+          echo "=========================================="
