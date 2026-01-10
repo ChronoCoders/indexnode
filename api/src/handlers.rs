@@ -1,9 +1,13 @@
-﻿use axum::{extract::{State, Path}, http::StatusCode, Json};
+use crate::{auth, models::User, routes::AppState};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
+use chrono::Utc;
+use indexnode_core::{Job, JobQueue, JobStatus};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::Utc;
-use crate::{routes::AppState, auth, models::User};
-use indexnode_core::{JobQueue, Job, JobStatus};
 
 #[derive(Serialize)]
 pub struct HealthResponse {
@@ -35,31 +39,27 @@ pub async fn register(
     Json(req): Json<RegisterRequest>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
     let user_id = Uuid::new_v4();
-    let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)
-        .map_err(|e| {
-            tracing::error!("Bcrypt error: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    sqlx::query(
-        "INSERT INTO users (id, email, password_hash, created_at) VALUES ($1, $2, $3, $4)"
-    )
-    .bind(user_id)
-    .bind(&req.email)
-    .bind(&password_hash)
-    .bind(Utc::now())
-    .execute(&state.pool)
-    .await
-    .map_err(|e| {
-        tracing::error!("Database insert error: {:?}", e);
+    let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST).map_err(|e| {
+        tracing::error!("Bcrypt error: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    let token = auth::create_token(user_id)
+    sqlx::query("INSERT INTO users (id, email, password_hash, created_at) VALUES ($1, $2, $3, $4)")
+        .bind(user_id)
+        .bind(&req.email)
+        .bind(&password_hash)
+        .bind(Utc::now())
+        .execute(&state.pool)
+        .await
         .map_err(|e| {
-            tracing::error!("Token creation error: {}", e);
+            tracing::error!("Database insert error: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+
+    let token = auth::create_token(user_id).map_err(|e| {
+        tracing::error!("Token creation error: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     Ok(Json(AuthResponse {
         token,
@@ -78,7 +78,7 @@ pub async fn login(
     Json(req): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
     let user = sqlx::query_as::<_, User>(
-        "SELECT id, email, password_hash, created_at FROM users WHERE email = $1"
+        "SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
     )
     .bind(&req.email)
     .fetch_optional(&state.pool)
@@ -89,21 +89,19 @@ pub async fn login(
     })?
     .ok_or(StatusCode::UNAUTHORIZED)?;
 
-    let valid = bcrypt::verify(&req.password, &user.password_hash)
-        .map_err(|e| {
-            tracing::error!("Bcrypt verify error: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let valid = bcrypt::verify(&req.password, &user.password_hash).map_err(|e| {
+        tracing::error!("Bcrypt verify error: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     if !valid {
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    let token = auth::create_token(user.id)
-        .map_err(|e| {
-            tracing::error!("Token creation error: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let token = auth::create_token(user.id).map_err(|e| {
+        tracing::error!("Token creation error: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     Ok(Json(AuthResponse {
         token,
@@ -129,7 +127,7 @@ pub async fn create_job(
     Json(req): Json<CreateJobRequest>,
 ) -> Result<Json<JobResponse>, StatusCode> {
     let job_id = Uuid::new_v4();
-    
+
     let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users LIMIT 1")
         .fetch_one(&state.pool)
         .await
@@ -161,11 +159,10 @@ pub async fn create_job(
     };
 
     let queue = JobQueue::new(state.pool.clone());
-    queue.enqueue(job).await
-        .map_err(|e| {
-            tracing::error!("Job enqueue error: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    queue.enqueue(job).await.map_err(|e| {
+        tracing::error!("Job enqueue error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     Ok(Json(JobResponse {
         id: job_id.to_string(),
@@ -178,7 +175,9 @@ pub async fn get_job(
     Path(id): Path<Uuid>,
 ) -> Result<Json<JobResponse>, StatusCode> {
     let queue = JobQueue::new(state.pool.clone());
-    let job = queue.get_job(id).await
+    let job = queue
+        .get_job(id)
+        .await
         .map_err(|e| {
             tracing::error!("Job fetch error: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR

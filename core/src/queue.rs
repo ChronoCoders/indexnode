@@ -1,8 +1,7 @@
-﻿
+use crate::job::{Job, JobStatus};
+use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
-use anyhow::Result;
-use crate::job::{Job, JobStatus};
 
 pub struct JobQueue {
     pool: PgPool,
@@ -16,7 +15,7 @@ impl JobQueue {
     pub async fn enqueue(&self, job: Job) -> Result<Uuid> {
         let id = sqlx::query_scalar(
             "INSERT INTO jobs (id, user_id, status, priority, config, created_at) 
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
         )
         .bind(job.id)
         .bind(job.user_id)
@@ -38,7 +37,7 @@ impl JobQueue {
                  WHERE status = 'queued' 
                  ORDER BY priority DESC, created_at ASC 
                  LIMIT 1 FOR UPDATE SKIP LOCKED
-             ) RETURNING *"
+             ) RETURNING *",
         )
         .fetch_optional(&self.pool)
         .await?;
@@ -47,7 +46,10 @@ impl JobQueue {
             let job = Job {
                 id: r.get("id"),
                 user_id: r.get("user_id"),
-                status: r.get::<String, _>("status").parse().unwrap_or(JobStatus::Queued),
+                status: r
+                    .get::<String, _>("status")
+                    .parse()
+                    .unwrap_or(JobStatus::Queued),
                 priority: r.get("priority"),
                 config: r.get("config"),
                 created_at: r.get("created_at"),
@@ -64,7 +66,12 @@ impl JobQueue {
         }
     }
 
-    pub async fn update_status(&self, job_id: Uuid, status: JobStatus, error: Option<String>) -> Result<()> {
+    pub async fn update_status(
+        &self,
+        job_id: Uuid,
+        status: JobStatus,
+        error: Option<String>,
+    ) -> Result<()> {
         sqlx::query(
             "UPDATE jobs SET status = $1, completed_at = CASE WHEN $1 IN ('completed', 'failed') THEN NOW() ELSE completed_at END, error = $2 WHERE id = $3"
         )
@@ -87,7 +94,10 @@ impl JobQueue {
             let job = Job {
                 id: r.get("id"),
                 user_id: r.get("user_id"),
-                status: r.get::<String, _>("status").parse().unwrap_or(JobStatus::Queued),
+                status: r
+                    .get::<String, _>("status")
+                    .parse()
+                    .unwrap_or(JobStatus::Queued),
                 priority: r.get("priority"),
                 config: r.get("config"),
                 created_at: r.get("created_at"),
@@ -104,5 +114,3 @@ impl JobQueue {
         }
     }
 }
-
-

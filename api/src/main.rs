@@ -1,4 +1,4 @@
-﻿use anyhow::Result;
+use anyhow::Result;
 use axum::{serve, Router};
 use chrono::Utc;
 use indexnode_core::{Crawler, JobQueue, JobStatus};
@@ -99,7 +99,7 @@ async fn run_worker(pool: sqlx::PgPool) -> Result<()> {
                             });
 
                             let result = query_builder.build().execute(&pool).await;
-                            
+
                             if let Err(e) = result {
                                 tracing::error!("Failed to insert crawl results: {:?}", e);
                             }

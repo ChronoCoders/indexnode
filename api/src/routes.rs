@@ -1,6 +1,9 @@
-﻿use axum::{Router, routing::{get, post}};
-use sqlx::PgPool;
 use crate::handlers;
+use axum::{
+    routing::{get, post},
+    Router,
+};
+use sqlx::PgPool;
 
 #[derive(Clone)]
 pub struct AppState {
