@@ -12,7 +12,7 @@ COPY api ./api
 COPY core ./core
 COPY migrations ./migrations
 
-RUN rm -rf target/ /usr/local/cargo/registry/cache/*
+RUN cargo fetch
 RUN cargo build --release --bin indexnode-api
 
 FROM debian:bookworm-slim
