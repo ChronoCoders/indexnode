@@ -1,4 +1,4 @@
-﻿FROM rust:1.84-slim AS builder
+﻿FROM rustlang/rust:nightly-slim AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,6 @@ COPY api ./api
 COPY core ./core
 COPY migrations ./migrations
 
-RUN cargo fetch
 RUN cargo build --release --bin indexnode-api
 
 FROM debian:bookworm-slim
