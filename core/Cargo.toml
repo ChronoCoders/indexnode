@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "indexnode-core"
 version.workspace = true
 edition.workspace = true
@@ -16,3 +16,15 @@ serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 chrono.workspace = true
+ethers.workspace = true
+sha2.workspace = true
+hex.workspace = true
+tokio-stream.workspace = true
+tracing.workspace = true
+futures.workspace = true
+ipfs-api-backend-hyper.workspace = true
+redis.workspace = true 
+deadpool-redis.workspace = true 
+chromiumoxide.workspace = true 
+tokio-tungstenite.workspace = true 
+fastrand.workspace = true 

@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use chrono::Utc;
-use indexnode_core::{Job, JobQueue, JobStatus};
+use indexnode_core::{Job, JobQueue, JobStatus, JobType};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -111,9 +111,8 @@ pub async fn login(
 
 #[derive(Deserialize)]
 pub struct CreateJobRequest {
-    url: String,
-    max_pages: usize,
-    max_depth: Option<usize>,
+    pub job_type: JobType,
+    pub params: serde_json::Value,
 }
 
 #[derive(Serialize)]
@@ -137,10 +136,8 @@ pub async fn create_job(
         })?;
 
     let config = serde_json::json!({
-        "url": req.url,
-        "max_pages": req.max_pages,
-        "max_depth": req.max_depth,
-        "respect_robots_txt": true
+        "job_type": req.job_type,
+        "params": req.params,
     });
 
     let job = Job {
@@ -188,4 +185,57 @@ pub async fn get_job(
         id: job.id.to_string(),
         status: job.status.to_string(),
     }))
+}
+
+/// Request to verify a content hash on the blockchain.
+#[derive(Deserialize)]
+pub struct VerifyHashRequest {
+    pub content_hash: String,
+}
+
+/// Response for content hash verification.
+#[derive(Serialize)]
+pub struct VerifyHashResponse {
+    pub verified: bool,
+    pub block_number: Option<i64>,
+    pub transaction_hash: Option<String>,
+    pub committed_at: Option<String>,
+}
+
+/// Verifies a content hash against the local database of on-chain commitments.
+pub async fn verify_hash(
+    State(state): State<AppState>,
+    Json(req): Json<VerifyHashRequest>,
+) -> Result<Json<VerifyHashResponse>, StatusCode> {
+    let record = sqlx::query(
+        "SELECT transaction_hash, block_number, committed_at FROM timestamp_commits WHERE content_hash = $1",
+    )
+    .bind(&req.content_hash)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Database query error during verification: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    if let Some(r) = record {
+        use sqlx::Row;
+        let transaction_hash: String = r.get("transaction_hash");
+        let block_number: i64 = r.get("block_number");
+        let committed_at: chrono::DateTime<chrono::Utc> = r.get("committed_at");
+
+        Ok(Json(VerifyHashResponse {
+            verified: true,
+            block_number: Some(block_number),
+            transaction_hash: Some(transaction_hash),
+            committed_at: Some(committed_at.to_rfc3339()),
+        }))
+    } else {
+        Ok(Json(VerifyHashResponse {
+            verified: false,
+            block_number: None,
+            transaction_hash: None,
+            committed_at: None,
+        }))
+    }
 }

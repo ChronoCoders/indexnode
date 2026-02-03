@@ -57,10 +57,24 @@ impl std::fmt::Display for JobStatus {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JobConfig {
-    pub url: String,
-    pub max_pages: usize,
-    pub max_depth: Option<usize>,
-    pub respect_robots_txt: bool,
+    pub job_type: JobType,
+    pub params: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum JobType {
+    HttpCrawl,
+    BlockchainIndex,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BlockchainIndexParams {
+    pub chain: String,
+    pub contract_address: String,
+    pub events: Vec<String>,
+    pub from_block: u64,
+    pub to_block: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
