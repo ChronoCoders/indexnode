@@ -21,7 +21,7 @@ IndexNode is a production-grade blockchain infrastructure platform for indexing,
  
 ``` 
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐ 
-│   GraphQL   │────▶│  API Server  │────▶│  PostgreSQL │ 
+│   GraphQL   │────▶│  API Server │────▶│  PostgreSQL │ 
 │  Endpoint   │     │   (Axum)     │     │             │ 
 └─────────────┘     └──────────────┘     └─────────────┘ 
                            │ 
