@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "indexnode-api"
 version.workspace = true
 edition.workspace = true
@@ -13,6 +13,7 @@ path = "src/main.rs"
 indexnode-core = { path = "../core" }
 tokio.workspace = true
 sqlx.workspace = true
+ethers.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
@@ -27,3 +28,16 @@ tower-http.workspace = true
 jsonwebtoken.workspace = true
 bcrypt.workspace = true
 dotenvy.workspace = true
+async-graphql.workspace = true
+async-graphql-axum.workspace = true
+prometheus.workspace = true
+governor.workspace = true
+tower_governor.workspace = true 
+metrics.workspace = true 
+metrics-exporter-prometheus.workspace = true 
+regex.workspace = true
+ammonia.workspace = true
+argon2.workspace = true
+rand_core.workspace = true
+url.workspace = true
+tokio-stream = "0.1"
