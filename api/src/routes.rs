@@ -19,5 +19,6 @@ pub fn create_routes(pool: PgPool) -> Router {
         .route("/api/v1/auth/login", post(handlers::login))
         .route("/api/v1/jobs", post(handlers::create_job))
         .route("/api/v1/jobs/{id}", get(handlers::get_job))
+        .route("/api/v1/verify", post(handlers::verify_hash))
         .with_state(state)
 }
