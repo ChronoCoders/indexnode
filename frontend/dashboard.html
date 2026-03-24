@@ -76,8 +76,8 @@
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">Total Events</p>
-                            <p class="text-3xl font-bold text-cyan-400">1.2M</p>
+                            <p class="text-gray-400 text-sm mb-1">Requests This Period</p>
+                            <p class="text-3xl font-bold text-cyan-400" data-stat="quota-used">—</p>
                         </div>
                         <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
@@ -85,14 +85,14 @@
                             </svg>
                         </div>
                     </div>
-                    <p class="text-sm text-green-400">↑ 12% from last month</p>
+                    <p class="text-sm text-gray-500"><span data-stat="quota-remaining">—</span> remaining this period</p>
                 </div>
-                
+
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">Active Jobs</p>
-                            <p class="text-3xl font-bold">5</p>
+                            <p class="text-gray-400 text-sm mb-1">Plan Tier</p>
+                            <p class="text-3xl font-bold capitalize" data-stat="tier">—</p>
                         </div>
                         <div class="w-12 h-12 bg-blue-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
@@ -101,14 +101,14 @@
                             </svg>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500">2 processing now</p>
+                    <a href="pricing.html" class="text-sm text-cyan-400 hover:text-cyan-300">View plans →</a>
                 </div>
-                
+
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
                             <p class="text-gray-400 text-sm mb-1">Credit Balance</p>
-                            <p class="text-3xl font-bold">1,000 <span class="text-lg font-medium text-cyan-400">INC</span></p>
+                            <p class="text-3xl font-bold"><span data-stat="credits">—</span> <span class="text-lg font-medium text-cyan-400">credits</span></p>
                         </div>
                         <div class="w-12 h-12 bg-green-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400">
@@ -118,14 +118,14 @@
                             </svg>
                         </div>
                     </div>
-                    <a href="pricing.html" class="text-sm text-cyan-400 hover:text-cyan-300">Add credits →</a>
+                    <a href="pricing.html" class="text-sm text-cyan-400 hover:text-cyan-300">Deposit INC →</a>
                 </div>
-                
+
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">Verified Hashes</p>
-                            <p class="text-3xl font-bold">847K</p>
+                            <p class="text-gray-400 text-sm mb-1">GraphQL Endpoint</p>
+                            <p class="text-lg font-mono text-gray-300 mt-2">/graphql</p>
                         </div>
                         <div class="w-12 h-12 bg-purple-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
@@ -134,7 +134,7 @@
                             </svg>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500">70% of total events</p>
+                    <a href="/graphql/playground" target="_blank" class="text-sm text-cyan-400 hover:text-cyan-300">Open playground →</a>
                 </div>
                 
             </div>
@@ -206,10 +206,11 @@
                         </label>
                     </div>
                     
-                    <div class="flex justify-end">
-                        <button 
-                            type="submit" 
-                            class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition"
+                    <div class="flex items-center justify-between">
+                        <p id="jobFeedback" class="hidden text-sm"></p>
+                        <button
+                            type="submit"
+                            class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition ml-auto"
                         >
                             Start Indexing
                         </button>
@@ -217,128 +218,39 @@
                 </form>
             </div>
             
-            <!-- Recent Events -->
+            <!-- Events Explorer -->
             <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-800 flex justify-between items-center">
-                    <h2 class="text-2xl font-bold">Recent Blockchain Events</h2>
-                    <button class="text-cyan-400 hover:text-cyan-300 text-sm font-medium">
-                        View all →
-                    </button>
+                <div class="px-6 py-4 border-b border-gray-800">
+                    <h2 class="text-2xl font-bold mb-4">Blockchain Events</h2>
+                    <form id="contractSearchForm" class="flex gap-3">
+                        <input
+                            type="text"
+                            id="searchContractAddress"
+                            placeholder="Enter contract address (0x…)"
+                            class="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 font-mono text-sm"
+                        >
+                        <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium text-sm transition">
+                            Fetch Events
+                        </button>
+                    </form>
                 </div>
-                
+
                 <div class="overflow-x-auto">
-                    <table class="w-full" data-events-table>
+                    <table class="w-full">
                         <thead>
                             <tr class="text-left text-gray-400 border-b border-gray-800">
                                 <th class="px-6 py-3 font-medium">Contract</th>
                                 <th class="px-6 py-3 font-medium">Event</th>
                                 <th class="px-6 py-3 font-medium">Block</th>
-                                <th class="px-6 py-3 font-medium">Chain</th>
-                                <th class="px-6 py-3 font-medium">Timestamp</th>
+                                <th class="px-6 py-3 font-medium">Tx Hash</th>
                                 <th class="px-6 py-3 font-medium">Status</th>
-                                <th class="px-6 py-3 font-medium">Actions</th>
+                                <th class="px-6 py-3 font-medium">IPFS</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-800" id="eventsTableBody">
-                            <tr class="hover:bg-gray-800/50">
-                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0x1f9840...C02aaA</td>
-                                <td class="px-6 py-4">Transfer</td>
-                                <td class="px-6 py-4 text-gray-400">18524031</td>
-                                <td class="px-6 py-4">
-                                    <span class="text-cyan-400">Ethereum</span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-400 text-sm">2 mins ago</td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center text-xs text-green-400">
-                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                        </svg>
-                                        Verified
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-800/50">
-                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0x7a250d...56978a</td>
-                                <td class="px-6 py-4">Approval</td>
-                                <td class="px-6 py-4 text-gray-400">18524029</td>
-                                <td class="px-6 py-4">
-                                    <span class="text-purple-400">Polygon</span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-400 text-sm">5 mins ago</td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center text-xs text-green-400">
-                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                        </svg>
-                                        Verified
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-800/50">
-                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0xa0b8699...9c5204</td>
-                                <td class="px-6 py-4">Swap</td>
-                                <td class="px-6 py-4 text-gray-400">18524027</td>
-                                <td class="px-6 py-4">
-                                    <span class="text-cyan-400">Ethereum</span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-400 text-sm">8 mins ago</td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center text-xs text-yellow-400">
-                                        <svg class="w-3 h-3 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Processing
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-800/50">
-                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0x88e6a0...3b5c0c</td>
-                                <td class="px-6 py-4">Mint</td>
-                                <td class="px-6 py-4 text-gray-400">18524025</td>
-                                <td class="px-6 py-4">
-                                    <span class="text-purple-400">Polygon</span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-400 text-sm">12 mins ago</td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center text-xs text-green-400">
-                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                        </svg>
-                                        Verified
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-800/50">
-                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0xc02aaa...39b223</td>
-                                <td class="px-6 py-4">Deposit</td>
-                                <td class="px-6 py-4 text-gray-400">18524023</td>
-                                <td class="px-6 py-4">
-                                    <span class="text-cyan-400">Ethereum</span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-400 text-sm">15 mins ago</td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center text-xs text-green-400">
-                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                        </svg>
-                                        Verified
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                    Enter a contract address above to fetch indexed events.
                                 </td>
                             </tr>
                         </tbody>
