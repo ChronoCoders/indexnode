@@ -8,15 +8,15 @@ pub struct Crawler {
 }
 
 impl Crawler {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
             client: Client::builder()
                 .user_agent("IndexNode/1.0 (https://github.com/chronocoders)")
                 .timeout(std::time::Duration::from_secs(15))
                 .redirect(reqwest::redirect::Policy::limited(5))
                 .build()
-                .expect("Failed to build HTTP client"),
-        }
+                .context("Failed to build HTTP client")?,
+        })
     }
 
     pub async fn crawl(&self, url: &str, max_pages: usize) -> Result<Vec<String>> {
@@ -39,7 +39,7 @@ impl Crawler {
             .context("Failed to read response body")?;
 
         let document = Html::parse_document(&html);
-        let selector = Selector::parse("a[href]").expect("Valid CSS selector");
+        let selector = Selector::parse("a[href]").expect("Static CSS selector is valid; qed");
 
         let links: Vec<String> = document
             .select(&selector)
@@ -59,7 +59,7 @@ impl Crawler {
 
 impl Default for Crawler {
     fn default() -> Self {
-        Self::new()
+        Self::new().expect("Default crawler initialization should not fail; qed")
     }
 }
 
@@ -69,7 +69,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_crawler_basic() {
-        let crawler = Crawler::new();
+        let crawler = Crawler::new().expect("Failed to create crawler in test");
         let result = crawler.crawl("https://example.com", 10).await;
         assert!(result.is_ok());
     }

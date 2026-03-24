@@ -8,7 +8,7 @@ pub fn hash_content(data: &[u8]) -> String {
 }
 
 /// Generates a Merkle proof for a leaf at the specified index.
-/// 
+///
 /// Returns a vector of hashes representing the proof path.
 pub fn generate_merkle_proof(leaves: &[String], index: usize) -> Vec<String> {
     let mut proof = Vec::new();
@@ -26,7 +26,7 @@ pub fn generate_merkle_proof(leaves: &[String], index: usize) -> Vec<String> {
         for i in (0..current_leaves.len()).step_by(2) {
             let left = &current_leaves[i];
             let right = &current_leaves[i + 1];
-            
+
             if i == current_index || i + 1 == current_index {
                 let sibling = if i == current_index { right } else { left };
                 proof.push(sibling.clone());
@@ -43,18 +43,36 @@ pub fn generate_merkle_proof(leaves: &[String], index: usize) -> Vec<String> {
 }
 
 /// Verifies a Merkle proof against a root hash.
-/// 
+///
+/// `leaf_index` is the 0-based index of the leaf in the original leaf list.
+/// `total_leaves` is the total number of leaves used when generating the proof.
 /// Returns true if the calculated root matches the provided root.
-pub fn verify_merkle_proof(leaf: &str, proof: &[String], root: &str) -> bool {
+pub fn verify_merkle_proof(
+    leaf: &str,
+    proof: &[String],
+    root: &str,
+    leaf_index: usize,
+    total_leaves: usize,
+) -> bool {
     let mut current_hash = leaf.to_string();
+    let mut current_index = leaf_index;
+    let mut level_size = total_leaves;
 
     for sibling in proof {
-        // In a real implementation, we'd need to know if the sibling is left or right.
-        // For this simplified version, we sort them to ensure consistency.
-        let mut elements = [current_hash.clone(), sibling.clone()];
-        elements.sort();
-        let combined = format!("{}{}", elements[0], elements[1]);
+        // Pad odd levels to match how generate_merkle_proof duplicates the last node.
+        if level_size % 2 != 0 {
+            level_size += 1;
+        }
+        let combined = if current_index % 2 == 0 {
+            // Current node is the left child; sibling is on the right.
+            format!("{}{}", current_hash, sibling)
+        } else {
+            // Current node is the right child; sibling is on the left.
+            format!("{}{}", sibling, current_hash)
+        };
         current_hash = hash_content(combined.as_bytes());
+        current_index /= 2;
+        level_size /= 2;
     }
 
     current_hash == root
@@ -79,14 +97,16 @@ mod tests {
             hash_content(b"leaf3"),
             hash_content(b"leaf4"),
         ];
-        
+
         // Root calculation
         let l12 = hash_content(format!("{}{}", leaves[0], leaves[1]).as_bytes());
         let l34 = hash_content(format!("{}{}", leaves[2], leaves[3]).as_bytes());
-        let _root = hash_content(format!("{}{}", l12, l34).as_bytes());
+        let root = hash_content(format!("{}{}", l12, l34).as_bytes());
 
-        let _proof = generate_merkle_proof(&leaves, 0);
-        // Note: simplified verify might fail if sorting isn't consistent with generation.
-        // This is a basic demonstration as per user request.
+        let proof = generate_merkle_proof(&leaves, 0);
+        assert!(verify_merkle_proof(&leaves[0], &proof, &root, 0, leaves.len()));
+
+        let proof2 = generate_merkle_proof(&leaves, 2);
+        assert!(verify_merkle_proof(&leaves[2], &proof2, &root, 2, leaves.len()));
     }
 }

@@ -7,6 +7,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Distributed Systems Labs"]
 license = "MIT"
+description = "Trustless Blockchain Intelligence - Blockchain event indexing with cryptographic verification"
 
 [workspace.dependencies]
 tokio = { version = "1.43", features = ["full"] }
@@ -21,7 +22,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 axum = "0.8"
 tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "cors"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "fs"] }
 jsonwebtoken = "9.3"
 bcrypt = "0.16"
 reqwest = { version = "0.12", features = ["json", "stream"] }
@@ -54,6 +55,7 @@ futures = "0.3"
 # Cryptography
 sha2 = "0.10"
 hex = "0.4"
+zeroize = { version = "1.8", features = ["alloc"] }
 
 # IPFS
 ipfs-api-backend-hyper = "0.6"
