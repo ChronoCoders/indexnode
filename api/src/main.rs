@@ -11,6 +11,7 @@ use indexnode_core::{
     DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig, JobParams, JobQueue, JobStatus,
     MarketplaceClient, Worker as DistributedWorker, WorkerConfig as DistributedWorkerConfig,
 };
+use std::collections::HashMap;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::net::SocketAddr;
@@ -318,8 +319,24 @@ async fn run_worker(
 ) -> Result<()> {
     let queue = JobQueue::new(pool.clone());
     let crawler = Crawler::new()?;
-    let rpc_url = env::var("ETHEREUM_RPC_URL").context("ETHEREUM_RPC_URL must be set")?;
-    let blockchain_client = BlockchainClient::new(&rpc_url).await?;
+
+    let mut chain_clients: HashMap<String, BlockchainClient> = HashMap::new();
+    let eth_rpc_url = env::var("ETHEREUM_RPC_URL").context("ETHEREUM_RPC_URL must be set")?;
+    chain_clients.insert(
+        "ethereum".to_string(),
+        BlockchainClient::new(&eth_rpc_url).await?,
+    );
+    if let Ok(polygon_rpc_url) = env::var("POLYGON_RPC_URL") {
+        if !polygon_rpc_url.is_empty() {
+            match BlockchainClient::new(&polygon_rpc_url).await {
+                Ok(client) => {
+                    chain_clients.insert("polygon".to_string(), client);
+                    tracing::info!("Polygon RPC connected");
+                }
+                Err(e) => tracing::warn!("Failed to connect to Polygon RPC: {:?}", e),
+            }
+        }
+    }
 
     let ipfs_api_url =
         env::var("IPFS_API_URL").unwrap_or_else(|_| "http://127.0.0.1:5001".to_string());
@@ -469,7 +486,7 @@ async fn run_worker(
                     }
                     JobParams::BlockchainIndex(_) => {
                         match process_blockchain_index(
-                            &blockchain_client,
+                            &chain_clients,
                             &ipfs_storage,
                             &credit_manager,
                             ai.as_ref(),
@@ -521,7 +538,7 @@ async fn run_worker(
 }
 
 async fn process_blockchain_index(
-    client: &BlockchainClient,
+    chain_clients: &HashMap<String, BlockchainClient>,
     ipfs: &IpfsStorage,
     credit_manager: &CreditManager,
     ai: Option<&AIExtractor>,
@@ -535,6 +552,14 @@ async fn process_blockchain_index(
         JobParams::BlockchainIndex(p) => p,
         _ => anyhow::bail!("Expected BlockchainIndex params for this job"),
     };
+
+    let client = chain_clients.get(&params.chain).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Chain '{}' is not configured. Set {}_RPC_URL to enable it.",
+            params.chain,
+            params.chain.to_uppercase()
+        )
+    })?;
 
     let cost = CreditManager::event_index_cost();
     if let Ok(Some(addr_str)) = sqlx::query_scalar::<_, String>(
@@ -572,6 +597,7 @@ async fn process_blockchain_index(
     }
 
     let filter = EventFilter {
+        chain: params.chain.clone(),
         contract_address: params.contract_address.parse().context("Invalid address")?,
         event_signature: params
             .events

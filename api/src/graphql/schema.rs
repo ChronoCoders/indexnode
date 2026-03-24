@@ -410,7 +410,15 @@ impl Mutation {
         InputValidator::validate_numeric_range(input.from_block, 0_i64, i64::MAX, "from_block")
             .map_err(|e| Error::new(format!("Validation failed: {}", e)))?;
 
+        const SUPPORTED_CHAINS: &[&str] = &["ethereum", "polygon"];
         let sanitized_chain = Sanitizer::sanitize_text(&input.chain);
+        if !SUPPORTED_CHAINS.contains(&sanitized_chain.as_str()) {
+            return Err(Error::new(format!(
+                "Unsupported chain '{}'. Supported chains: {}",
+                sanitized_chain,
+                SUPPORTED_CHAINS.join(", ")
+            )));
+        }
 
         let job_id = Uuid::new_v4();
 
