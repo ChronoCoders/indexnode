@@ -1,4 +1,4 @@
-﻿use indexnode_core::{JobQueue, Crawler, JobStatus};
+use indexnode_core::{JobQueue, Crawler, JobStatus};
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use anyhow::Result;
@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
         .init();
 
     let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+        .context("DATABASE_URL must be set")?;
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
         .await?;
 
     let queue = JobQueue::new(pool.clone());
-    let crawler = Crawler::new();
+    let crawler = Crawler::new()?;
 
     tracing::info!("Worker started, waiting for jobs...");
 

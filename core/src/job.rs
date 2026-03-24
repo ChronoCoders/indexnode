@@ -55,10 +55,37 @@ impl std::fmt::Display for JobStatus {
     }
 }
 
+/// Typed job configuration stored in the database as JSON.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JobConfig {
     pub job_type: JobType,
-    pub params: serde_json::Value,
+    pub params: JobParams,
+}
+
+/// Typed union of all supported job parameter shapes.
+/// Uses untagged serde so the existing JSON stored in the database is compatible:
+/// HttpCrawl params contain `url`, BlockchainIndex params contain `contract_address`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum JobParams {
+    HttpCrawl(HttpCrawlParams),
+    BlockchainIndex(BlockchainIndexParams),
+}
+
+impl JobParams {
+    pub fn as_http_crawl(&self) -> Option<&HttpCrawlParams> {
+        match self {
+            Self::HttpCrawl(p) => Some(p),
+            _ => None,
+        }
+    }
+
+    pub fn as_blockchain_index(&self) -> Option<&BlockchainIndexParams> {
+        match self {
+            Self::BlockchainIndex(p) => Some(p),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,6 +95,21 @@ pub enum JobType {
     BlockchainIndex,
 }
 
+/// Parameters for an HTTP crawl job.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpCrawlParams {
+    /// The seed URL to start crawling from.
+    pub url: String,
+    /// Maximum number of pages to crawl. Defaults to 100.
+    #[serde(default = "default_max_pages")]
+    pub max_pages: usize,
+}
+
+fn default_max_pages() -> usize {
+    100
+}
+
+/// Parameters for a blockchain event indexing job.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockchainIndexParams {
     pub chain: String,

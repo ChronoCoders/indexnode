@@ -90,57 +90,57 @@ pub struct AIExtraction {
 }
 
 /// Current rate limit status for a user.
-#[derive(SimpleObject)] 
-pub struct RateLimitStatus { 
+#[derive(SimpleObject)]
+pub struct RateLimitStatus {
     /// The user's current rate limit tier (e.g., "free", "premium").
-    pub tier: String, 
+    pub tier: String,
     /// Total request quota for the current period.
-    pub quota: i32, 
+    pub quota: i32,
     /// Number of requests used in the current period.
-    pub used: i32, 
+    pub used: i32,
     /// Number of requests remaining in the current period.
-    pub remaining: i32, 
-} 
+    pub remaining: i32,
+}
 
 /// Global system health and queue metrics.
-#[derive(SimpleObject)] 
-pub struct SystemMetrics { 
+#[derive(SimpleObject)]
+pub struct SystemMetrics {
     /// Number of currently active worker nodes.
-    pub active_workers: i64, 
+    pub active_workers: i64,
     /// Number of jobs waiting in the distributed queue.
-    pub queue_depth: i64, 
-} 
+    pub queue_depth: i64,
+}
 
 /// A listing in the data marketplace.
-#[derive(SimpleObject)] 
-pub struct MarketplaceListing { 
-    pub id: String, 
-    pub seller_id: String, 
-    pub dataset_name: String, 
-    pub dataset_description: Option<String>, 
-    pub ipfs_cid: String, 
-    pub price_credits: i64, 
-    pub active: bool, 
-    pub sales_count: i32, 
-    pub seller_rating: Option<f64>, 
-} 
- 
+#[derive(SimpleObject)]
+pub struct MarketplaceListing {
+    pub id: String,
+    pub seller_id: String,
+    pub dataset_name: String,
+    pub dataset_description: Option<String>,
+    pub ipfs_cid: String,
+    pub price_credits: i64,
+    pub active: bool,
+    pub sales_count: i32,
+    pub seller_rating: Option<f64>,
+}
+
 /// A purchase record in the data marketplace.
-#[derive(SimpleObject)] 
-pub struct MarketplacePurchase { 
-    pub id: String, 
-    pub listing_id: String, 
-    pub buyer_id: String, 
-    pub paid_amount: i64, 
-    pub access_granted: bool, 
-    pub purchased_at: String, 
-} 
- 
+#[derive(SimpleObject)]
+pub struct MarketplacePurchase {
+    pub id: String,
+    pub listing_id: String,
+    pub buyer_id: String,
+    pub paid_amount: i64,
+    pub access_granted: bool,
+    pub purchased_at: String,
+}
+
 /// Input for creating a new marketplace listing.
-#[derive(InputObject)] 
-pub struct CreateListingInput { 
-    pub dataset_name: String, 
-    pub dataset_description: Option<String>, 
-    pub ipfs_cid: String, 
-    pub price_credits: i64, 
-} 
+#[derive(InputObject)]
+pub struct CreateListingInput {
+    pub dataset_name: String,
+    pub dataset_description: Option<String>,
+    pub ipfs_cid: String,
+    pub price_credits: i64,
+}

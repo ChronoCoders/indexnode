@@ -1,11 +1,16 @@
-use crate::{auth, models::User, routes::AppState};
+use crate::{
+    auth, db,
+    models::User,
+    routes::AppState,
+    security::{InputValidator, SecurityConfig},
+};
 use axum::{
-    extract::{Path, State},
+    extract::{Extension, Path, State},
     http::StatusCode,
     Json,
 };
 use chrono::Utc;
-use indexnode_core::{Job, JobQueue, JobStatus, JobType};
+use indexnode_core::{HttpCrawlParams, Job, JobConfig, JobParams, JobQueue, JobStatus, JobType};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -38,28 +43,48 @@ pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<RegisterRequest>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
+    // Validate password strength before hashing.
+    SecurityConfig::default()
+        .validate_password(&req.password)
+        .map_err(|e| {
+            tracing::warn!("Weak password on registration: {}", e);
+            StatusCode::UNPROCESSABLE_ENTITY
+        })?;
+
     let user_id = Uuid::new_v4();
     let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST).map_err(|e| {
         tracing::error!("Bcrypt error: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    sqlx::query("INSERT INTO users (id, email, password_hash, created_at) VALUES ($1, $2, $3, $4)")
-        .bind(user_id)
-        .bind(&req.email)
-        .bind(&password_hash)
-        .bind(Utc::now())
-        .execute(&state.pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("Database insert error: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    sqlx::query(
+        "INSERT INTO users (id, email, password_hash, role, created_at) VALUES ($1, $2, $3, 'user', $4)",
+    )
+    .bind(user_id)
+    .bind(&req.email)
+    .bind(&password_hash)
+    .bind(Utc::now())
+    .execute(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Database insert error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
-    let token = auth::create_token(user_id).map_err(|e| {
+    let token = auth::create_token(user_id, "user").map_err(|e| {
         tracing::error!("Token creation error: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
+
+    db::audit_log(
+        &state.pool,
+        Some(user_id),
+        "register",
+        "user",
+        Some(&user_id.to_string()),
+        Some(serde_json::json!({"email": req.email})),
+    )
+    .await;
 
     Ok(Json(AuthResponse {
         token,
@@ -78,7 +103,7 @@ pub async fn login(
     Json(req): Json<LoginRequest>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
     let user = sqlx::query_as::<_, User>(
-        "SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
+        "SELECT id, email, password_hash, role, created_at FROM users WHERE email = $1",
     )
     .bind(&req.email)
     .fetch_optional(&state.pool)
@@ -95,13 +120,32 @@ pub async fn login(
     })?;
 
     if !valid {
+        db::audit_log(
+            &state.pool,
+            Some(user.id),
+            "login_failed",
+            "user",
+            Some(&user.id.to_string()),
+            Some(serde_json::json!({"email": req.email, "reason": "invalid_password"})),
+        )
+        .await;
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    let token = auth::create_token(user.id).map_err(|e| {
+    let token = auth::create_token(user.id, &user.role).map_err(|e| {
         tracing::error!("Token creation error: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
+
+    db::audit_log(
+        &state.pool,
+        Some(user.id),
+        "login",
+        "user",
+        Some(&user.id.to_string()),
+        None,
+    )
+    .await;
 
     Ok(Json(AuthResponse {
         token,
@@ -112,6 +156,7 @@ pub async fn login(
 #[derive(Deserialize)]
 pub struct CreateJobRequest {
     pub job_type: JobType,
+    /// Raw JSON params; validated and converted to typed JobParams during handler.
     pub params: serde_json::Value,
 }
 
@@ -123,29 +168,44 @@ pub struct JobResponse {
 
 pub async fn create_job(
     State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
     Json(req): Json<CreateJobRequest>,
 ) -> Result<Json<JobResponse>, StatusCode> {
     let job_id = Uuid::new_v4();
 
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users LIMIT 1")
-        .fetch_one(&state.pool)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to get user: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    // Validate and convert raw params JSON into typed JobParams at the API boundary.
+    let typed_params: JobParams = match req.job_type {
+        JobType::HttpCrawl => {
+            let p: HttpCrawlParams = serde_json::from_value(req.params).map_err(|e| {
+                tracing::warn!("Invalid HttpCrawl params: {}", e);
+                StatusCode::UNPROCESSABLE_ENTITY
+            })?;
+            // Validate the URL at the boundary.
+            InputValidator::validate_url(&p.url).map_err(|e| {
+                tracing::warn!("Invalid crawl URL: {}", e);
+                StatusCode::UNPROCESSABLE_ENTITY
+            })?;
+            JobParams::HttpCrawl(p)
+        }
+        JobType::BlockchainIndex => {
+            // Blockchain index jobs must be created through the GraphQL mutation
+            // which performs address and event validation.
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
 
-    let config = serde_json::json!({
-        "job_type": req.job_type,
-        "params": req.params,
-    });
+    let config_value = serde_json::to_value(JobConfig {
+        job_type: req.job_type,
+        params: typed_params,
+    })
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let job = Job {
         id: job_id,
         user_id,
         status: JobStatus::Queued,
         priority: 50,
-        config,
+        config: config_value,
         created_at: Utc::now(),
         scheduled_at: None,
         started_at: None,
@@ -160,6 +220,16 @@ pub async fn create_job(
         tracing::error!("Job enqueue error: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
+
+    db::audit_log(
+        &state.pool,
+        Some(user_id),
+        "create_job",
+        "job",
+        Some(&job_id.to_string()),
+        Some(serde_json::json!({"job_type": "http_crawl"})),
+    )
+    .await;
 
     Ok(Json(JobResponse {
         id: job_id.to_string(),

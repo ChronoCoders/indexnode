@@ -16,21 +16,27 @@ COPY migrations ./migrations
 RUN cargo install sqlx-cli --no-default-features --features postgres
 RUN cargo build --release --bin indexnode-api 
  
-FROM debian:bookworm-slim 
- 
-RUN apt-get update && apt-get install -y \ 
-    ca-certificates \ 
-    libssl3 \ 
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
     curl \
-    && rm -rf /var/lib/apt/lists/* 
- 
-WORKDIR /app 
- 
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r appuser && useradd --no-log-init -r -g appuser appuser
+
+WORKDIR /app
+
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/
-COPY --from=builder /app/target/release/indexnode-api . 
-COPY migrations ./migrations 
- 
-ENV RUST_LOG=info 
-EXPOSE 8080 
- 
+COPY --from=builder /app/target/release/indexnode-api .
+COPY frontend ./frontend
+COPY migrations ./migrations
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+ENV RUST_LOG=info
+EXPOSE 8080
+
 CMD ["./indexnode-api"] 

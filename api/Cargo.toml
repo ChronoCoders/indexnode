@@ -41,3 +41,4 @@ argon2.workspace = true
 rand_core.workspace = true
 url.workspace = true
 tokio-stream = "0.1"
+zeroize.workspace = true

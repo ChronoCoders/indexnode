@@ -1,5 +1,7 @@
 use crate::handlers;
+use crate::middleware::require_auth;
 use axum::{
+    middleware,
     routing::{get, post},
     Router,
 };
@@ -13,12 +15,19 @@ pub struct AppState {
 pub fn create_routes(pool: PgPool) -> Router {
     let state = AppState { pool };
 
-    Router::new()
+    let public_routes = Router::new()
         .route("/health", get(handlers::health_check))
         .route("/api/v1/auth/register", post(handlers::register))
-        .route("/api/v1/auth/login", post(handlers::login))
+        .route("/api/v1/auth/login", post(handlers::login));
+
+    let protected_routes = Router::new()
         .route("/api/v1/jobs", post(handlers::create_job))
         .route("/api/v1/jobs/{id}", get(handlers::get_job))
         .route("/api/v1/verify", post(handlers::verify_hash))
+        .route_layer(middleware::from_fn(require_auth));
+
+    Router::new()
+        .merge(public_routes)
+        .merge(protected_routes)
         .with_state(state)
 }

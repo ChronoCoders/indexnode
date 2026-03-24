@@ -12,20 +12,21 @@ pub struct IpfsStorage {
 
 impl IpfsStorage {
     /// Creates a new `IpfsStorage` instance.
-    /// 
+    ///
     /// # Arguments
     /// * `api_url` - The URL of the IPFS API (e.g., "http://127.0.0.1:5001").
     /// * `pinata_jwt` - Optional JWT for Pinata authentication.
     pub fn new(api_url: &str, pinata_jwt: Option<String>) -> Result<Self> {
-        let client = IpfsClient::from_str(api_url)
-            .context("Failed to create IPFS client from URI")?;
+        let client =
+            IpfsClient::from_str(api_url).context("Failed to create IPFS client from URI")?;
         Ok(Self { client, pinata_jwt })
     }
 
     /// Stores raw binary content to IPFS and returns its Content Identifier (CID).
     pub async fn store_content(&self, data: &[u8]) -> Result<String> {
         let cursor = Cursor::new(data.to_vec());
-        let response = self.client
+        let response = self
+            .client
             .add(cursor)
             .await
             .context("Failed to add content to IPFS")?;

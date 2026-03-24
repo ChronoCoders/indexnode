@@ -3,6 +3,8 @@ use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
+use crate::merkle::hash_content;
+
 /// Client for interacting with blockchain RPC nodes.
 pub struct BlockchainClient {
     provider: Arc<Provider<Ws>>,
@@ -74,7 +76,7 @@ impl BlockchainClient {
                 block_number: log.block_number.context("Missing block number")?.as_u64(),
                 transaction_hash: format!("{:?}", log.transaction_hash.context("Missing tx hash")?),
                 event_data: serde_json::to_value(&log.data).unwrap_or(serde_json::Value::Null),
-                content_hash: "".to_string(), // Will be populated by merkle hashing logic
+                content_hash: hash_content(log.data.as_ref()),
             };
             events.push(event);
         }
@@ -115,8 +117,13 @@ mod tests {
         let rpc_url = "wss://ethereum-sepolia-rpc.publicnode.com";
         let client = BlockchainClient::new(rpc_url).await;
         if let Ok(client) = client {
-            let address: Address = "0x1c7D4B196Cb023240166624b9c5291532634a66a".parse().unwrap();
-            let latest = client.get_latest_block().await.unwrap();
+            let address: Address = "0x1c7D4B196Cb023240166624b9c5291532634a66a"
+                .parse()
+                .expect("Hardcoded USDC address is valid; qed");
+            let latest = client
+                .get_latest_block()
+                .await
+                .expect("Failed to get latest block in test");
             let filter = EventFilter {
                 contract_address: address,
                 event_signature: "Transfer(address,address,uint256)".to_string(),
