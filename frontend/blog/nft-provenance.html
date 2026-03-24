@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Provenance Tracking with Cryptographic Proof - IndexNode Blog</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="How NFT marketplaces can use IndexNode to provide verifiable ownership history and authenticity guarantees to buyers.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/tailwind.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .prose p { margin-bottom: 1.25rem; color: #9ca3af; line-height: 1.75; }
+        .prose h2 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 1rem; color: #f3f4f6; }
+        .prose h3 { font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #f3f4f6; }
+        .prose ul { list-style: disc; padding-left: 1.5rem; color: #9ca3af; margin-bottom: 1.25rem; }
+        .prose ul li { margin-bottom: 0.5rem; }
+        .prose code { font-family: 'JetBrains Mono', monospace; background: #1f2937; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.875rem; color: #67e8f9; }
+        .code-block { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold tracking-tight">IndexNode</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="../features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                <a href="../pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                <a href="../docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                <a href="../blog.html" class="text-cyan-400 font-medium">Blog</a>
+                <a href="../signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="pt-32 pb-24">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto">
+
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-purple-600/10 text-purple-400 px-3 py-1 rounded-full text-sm font-medium">Use Case</span>
+                    <span class="text-gray-500 text-sm">January 10, 2026</span>
+                    <span class="text-gray-500 text-sm">·</span>
+                    <span class="text-gray-500 text-sm">9 min read</span>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                    NFT Provenance Tracking with Cryptographic Proof
+                </h1>
+
+                <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                    Ownership history shown in NFT marketplaces is typically provided by the marketplace itself — a centralized source with no verifiability. Here's how to build provenance that buyers can independently verify.
+                </p>
+
+                <div class="border-t border-gray-800 mb-8 pt-8 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <p class="font-medium">Distributed Systems Labs</p>
+                        <p class="text-sm text-gray-500">Engineering Team</p>
+                    </div>
+                </div>
+
+                <div class="prose">
+                    <h2>The Provenance Problem</h2>
+                    <p>
+                        When a buyer views an NFT's ownership history on a marketplace, they're trusting the marketplace's database. That database could be wrong — from a bug, a migration error, or deliberate manipulation. The blockchain itself has the authoritative record, but querying a full node for every token's complete <code>Transfer</code> history is slow and expensive.
+                    </p>
+                    <p>
+                        The result is that provenance — one of NFTs' core value propositions — is often presented in a way that's no more trustworthy than a spreadsheet.
+                    </p>
+
+                    <h2>On-Chain Transfer Events Are the Ground Truth</h2>
+                    <p>
+                        Every ERC-721 transfer emits a <code>Transfer(address indexed from, address indexed to, uint256 indexed tokenId)</code> event. These events are permanently recorded on-chain and cannot be altered retroactively. A complete provenance chain is the ordered sequence of <code>Transfer</code> events for a given <code>tokenId</code> from mint to present.
+                    </p>
+                    <p>
+                        IndexNode indexes these events with Merkle proofs, so any application can display provenance that is verifiably complete and tamper-evident.
+                    </p>
+
+                    <h2>Indexing NFT Transfers</h2>
+                    <p>
+                        Create an indexing job for your NFT contract from the moment of deployment:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">mutation</span> {
+  <span style="color:#67e8f9">createBlockchainJob</span>(input: {
+    contractAddress: <span style="color:#86efac">"0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"</span>,
+    chain: <span style="color:#86efac">"ethereum"</span>,
+    events: [<span style="color:#86efac">"Transfer"</span>],
+    fromBlock: <span style="color:#86efac">12287507</span>
+  }) {
+    id
+    status
+  }
+}</pre>
+                    </div>
+                    <p>
+                        Setting <code>fromBlock</code> to the contract's deployment block ensures you capture the mint transactions and build a complete history from genesis.
+                    </p>
+
+                    <h2>Retrieving the Transfer Chain for a Token</h2>
+                    <p>
+                        Once indexed, query all Transfer events for a contract. Filter client-side by <code>tokenId</code> from the <code>eventData</code> field, or extend the API with a filtered query for your use case:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">query</span> {
+  <span style="color:#67e8f9">blockchainEvents</span>(
+    contractAddress: <span style="color:#86efac">"0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"</span>,
+    limit: <span style="color:#86efac">100</span>
+  ) {
+    id
+    eventName
+    blockNumber
+    transactionHash
+    eventData
+    contentHash
+    ipfsCid
+  }
+}</pre>
+                    </div>
+                    <p>
+                        The <code>eventData</code> for each <code>Transfer</code> event contains <code>from</code>, <code>to</code>, and <code>tokenId</code>. Filtering and sorting by <code>blockNumber</code> gives you the complete, ordered ownership chain.
+                    </p>
+
+                    <h2>Displaying Verifiable Provenance</h2>
+                    <p>
+                        For each transfer in the chain, display:
+                    </p>
+                    <ul>
+                        <li>The previous and new owner addresses (from <code>eventData.from</code> and <code>eventData.to</code>)</li>
+                        <li>The block number and a link to the transaction on a block explorer</li>
+                        <li>A verification status indicator — check <code>contentHash</code> against the on-chain commitment</li>
+                        <li>An IPFS link for users who want to inspect the raw indexed data independently</li>
+                    </ul>
+                    <p>
+                        A "Verify on-chain" button that calls <code>verifyHash(contentHash)</code> lets buyers confirm that the provenance they're seeing is backed by an immutable on-chain commitment — not just your database.
+                    </p>
+
+                    <h2>Handling Wash Trading Detection</h2>
+                    <p>
+                        A complete indexed transfer history also enables wash trading detection. Transfers between the same wallet or wallets with a shared funding source within a short window are a common signal. With IndexNode's full history accessible via GraphQL, you can run these checks client-side or as a server-side analysis job without maintaining your own indexing infrastructure.
+                    </p>
+
+                    <h2>Summary</h2>
+                    <p>
+                        NFT provenance backed by IndexNode means every ownership claim in your marketplace UI is anchored to an on-chain Merkle commitment. Buyers can verify the complete transfer history independently — without trusting you, without running a node, and without relying on a block explorer's accuracy.
+                    </p>
+                </div>
+
+                <div class="border-t border-gray-800 mt-12 pt-8">
+                    <a href="../blog.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Blog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

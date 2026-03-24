@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polygon Support Now Live - IndexNode Blog</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Index events from Polygon with the same cryptographic guarantees as Ethereum. Lower gas costs, same trustless verification.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/tailwind.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .prose p { margin-bottom: 1.25rem; color: #9ca3af; line-height: 1.75; }
+        .prose h2 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 1rem; color: #f3f4f6; }
+        .prose h3 { font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #f3f4f6; }
+        .prose ul { list-style: disc; padding-left: 1.5rem; color: #9ca3af; margin-bottom: 1.25rem; }
+        .prose ul li { margin-bottom: 0.5rem; }
+        .prose code { font-family: 'JetBrains Mono', monospace; background: #1f2937; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.875rem; color: #67e8f9; }
+        .code-block { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold tracking-tight">IndexNode</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="../features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                <a href="../pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                <a href="../docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                <a href="../blog.html" class="text-cyan-400 font-medium">Blog</a>
+                <a href="../signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="pt-32 pb-24">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto">
+
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-green-600/10 text-green-400 px-3 py-1 rounded-full text-sm font-medium">Product</span>
+                    <span class="text-gray-500 text-sm">January 5, 2026</span>
+                    <span class="text-gray-500 text-sm">·</span>
+                    <span class="text-gray-500 text-sm">5 min read</span>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                    Polygon Support Now Live
+                </h1>
+
+                <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                    IndexNode now indexes Polygon (PoS) with the same Merkle proofs, on-chain timestamping, and IPFS storage as Ethereum. Same trust model, significantly lower indexing costs.
+                </p>
+
+                <div class="border-t border-gray-800 mb-8 pt-8 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <p class="font-medium">Distributed Systems Labs</p>
+                        <p class="text-sm text-gray-500">Engineering Team</p>
+                    </div>
+                </div>
+
+                <div class="prose">
+                    <h2>What's Available Today</h2>
+                    <p>
+                        Polygon (PoS) is now a first-class supported chain in IndexNode. You can create indexing jobs for any Polygon contract, receive events via GraphQL and WebSocket subscriptions, and verify data integrity via Merkle proofs — exactly as you would for Ethereum.
+                    </p>
+                    <p>
+                        To target Polygon, set <code>chain: "polygon"</code> in your indexing job:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">mutation</span> {
+  <span style="color:#67e8f9">createBlockchainJob</span>(input: {
+    contractAddress: <span style="color:#86efac">"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"</span>,
+    chain: <span style="color:#86efac">"polygon"</span>,
+    events: [<span style="color:#86efac">"Transfer"</span>],
+    fromBlock: <span style="color:#86efac">55000000</span>
+  }) {
+    id
+    status
+  }
+}</pre>
+                    </div>
+                    <p>
+                        The dashboard's "Create Indexing Job" form also lists Polygon in the chain selector alongside Ethereum.
+                    </p>
+
+                    <h2>Why Polygon Matters for Web3 Infrastructure</h2>
+                    <p>
+                        Polygon processes blocks roughly every two seconds and its gas costs are a fraction of Ethereum mainnet. For applications that need high-throughput event monitoring — gaming platforms, NFT marketplaces, micro-payment rails — Ethereum's block times and gas costs are prohibitive. Polygon handles these workloads efficiently while maintaining EVM compatibility.
+                    </p>
+                    <p>
+                        For IndexNode users, this means you can index high-frequency contracts without consuming excessive credits — Polygon's faster block cadence and lower gas costs translate to lower on-chain commitment costs when we anchor Merkle roots.
+                    </p>
+
+                    <h2>The Same Verification Guarantees</h2>
+                    <p>
+                        Polygon support is not a cut-down version of our Ethereum integration. Every feature available on Ethereum is available on Polygon:
+                    </p>
+                    <ul>
+                        <li>Merkle proof generation and verification for every event batch</li>
+                        <li>On-chain Merkle root commitment via the TimestampRegistry contract deployed on Polygon</li>
+                        <li>IPFS backup for all indexed event batches (Growth and Enterprise)</li>
+                        <li>Real-time WebSocket subscriptions for live event streams</li>
+                        <li>AI extraction for structured data from event parameters</li>
+                    </ul>
+                    <p>
+                        Verification works identically regardless of chain. Pass the <code>contentHash</code> of any event to <code>verifyHash</code> and the API will return the block number and transaction hash of the on-chain commitment — whether it was anchored on Ethereum or Polygon.
+                    </p>
+
+                    <h2>Existing Polygon Users</h2>
+                    <p>
+                        If you've been waiting to migrate from another indexer for Polygon contracts, now is the time. Historical backfill is supported — set <code>fromBlock</code> to the deployment block of your contract to build a complete event history from genesis.
+                    </p>
+                    <p>
+                        Credit costs for Polygon jobs are consistent with Ethereum at the same per-event rate.
+                    </p>
+
+                    <h2>What's Next</h2>
+                    <p>
+                        We're evaluating additional EVM-compatible chains based on user demand. If you need support for a specific network, reach out at <a href="mailto:hello@indexnode.io" style="color: #67e8f9;">hello@indexnode.io</a> — network additions are prioritized by active user requests.
+                    </p>
+                </div>
+
+                <div class="border-t border-gray-800 mt-12 pt-8">
+                    <a href="../blog.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Blog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
