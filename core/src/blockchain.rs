@@ -13,6 +13,8 @@ pub struct BlockchainClient {
 /// Filter parameters for blockchain event indexing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventFilter {
+    /// The chain name (e.g., "ethereum", "polygon").
+    pub chain: String,
     /// The smart contract address to monitor.
     pub contract_address: Address,
     /// The signature of the event to filter (e.g., "Transfer(address,address,uint256)").
@@ -70,7 +72,7 @@ impl BlockchainClient {
         let mut events = Vec::new();
         for log in logs {
             let event = BlockchainEvent {
-                chain: "ethereum".to_string(), // Default for now, can be parameterized
+                chain: filter.chain.clone(),
                 contract_address: format!("{:?}", log.address),
                 event_name: filter.event_signature.clone(),
                 block_number: log.block_number.context("Missing block number")?.as_u64(),
