@@ -46,9 +46,9 @@ impl AIExtractor {
         raw_content: &str,
         schema: &str,
     ) -> Result<serde_json::Value> {
-        let prompt = format!( 
-            "Extract structured data from the following content according to this schema:\n\nSchema:\n{}\n\nContent:\n{}\n\nReturn only valid JSON matching the schema.", 
-            schema, raw_content 
+        let prompt = format!(
+            "Extract structured data from the following content according to this schema:\n\nSchema:\n{}\n\nContent:\n{}\n\nReturn only valid JSON matching the schema.",
+            schema, raw_content
         );
 
         let request = ClaudeRequest {
@@ -140,9 +140,9 @@ impl AIExtractor {
 
     pub async fn classify_content(&self, content: &str, categories: &[String]) -> Result<String> {
         let categories_str = categories.join(", ");
-        let prompt = format!( 
-            "Classify the following content into one of these categories: {}.\n\nContent:\n{}\n\nReturn only the category name.", 
-            categories_str, content 
+        let prompt = format!(
+            "Classify the following content into one of these categories: {}.\n\nContent:\n{}\n\nReturn only the category name.",
+            categories_str, content
         );
 
         let request = ClaudeRequest {
