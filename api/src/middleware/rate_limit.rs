@@ -2,7 +2,9 @@ use anyhow::Context;
 use axum::http::Request;
 use governor::middleware::NoOpMiddleware;
 use std::sync::Arc;
-use tower_governor::{governor::GovernorConfigBuilder, key_extractor::KeyExtractor, GovernorError, GovernorLayer};
+use tower_governor::{
+    governor::GovernorConfigBuilder, key_extractor::KeyExtractor, GovernorError, GovernorLayer,
+};
 use uuid::Uuid;
 
 pub fn create_global_rate_limiter() -> anyhow::Result<
@@ -38,9 +40,8 @@ impl KeyExtractor for UserIdKeyExtractor {
     }
 }
 
-pub fn create_per_user_rate_limiter() -> anyhow::Result<
-    GovernorLayer<UserIdKeyExtractor, NoOpMiddleware, axum::body::Body>,
-> {
+pub fn create_per_user_rate_limiter(
+) -> anyhow::Result<GovernorLayer<UserIdKeyExtractor, NoOpMiddleware, axum::body::Body>> {
     let config = GovernorConfigBuilder::default()
         .key_extractor(UserIdKeyExtractor)
         .per_second(5)
@@ -50,4 +51,3 @@ pub fn create_per_user_rate_limiter() -> anyhow::Result<
 
     Ok(GovernorLayer::new(Arc::new(config)))
 }
-

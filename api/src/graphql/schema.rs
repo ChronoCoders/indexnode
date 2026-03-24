@@ -424,8 +424,8 @@ impl Mutation {
                 to_block: input.to_block.map(|b| b as u64),
             }),
         };
-        let config_json =
-            serde_json::to_value(&config).map_err(|e| Error::new(format!("Config error: {}", e)))?;
+        let config_json = serde_json::to_value(&config)
+            .map_err(|e| Error::new(format!("Config error: {}", e)))?;
 
         sqlx::query("INSERT INTO jobs (id, user_id, status, config) VALUES ($1, $2, 'queued', $3)")
             .bind(job_id)
@@ -518,8 +518,13 @@ impl Mutation {
             .map_err(|e| Error::new(format!("Invalid IPFS CID: {}", e)))?;
         InputValidator::validate_string_length(&input.dataset_name, 1, 256, "dataset_name")
             .map_err(|e| Error::new(format!("Validation failed: {}", e)))?;
-        InputValidator::validate_numeric_range(input.price_credits, 1_i64, 1_000_000_i64, "price_credits")
-            .map_err(|e| Error::new(format!("Validation failed: {}", e)))?;
+        InputValidator::validate_numeric_range(
+            input.price_credits,
+            1_i64,
+            1_000_000_i64,
+            "price_credits",
+        )
+        .map_err(|e| Error::new(format!("Validation failed: {}", e)))?;
 
         let sanitized_name = Sanitizer::remove_null_bytes(&input.dataset_name);
         let sanitized_desc = input
