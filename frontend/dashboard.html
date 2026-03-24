@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - IndexNode</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="IndexNode dashboard - Monitor and manage your blockchain indexing jobs.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/tailwind.min.css">
+<style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(6, 182, 212, 0.1);
+            border-top-color: #06b6d4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+    
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading dashboard...</p>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-40">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                    <a href="use-cases.html" class="text-gray-400 hover:text-cyan-400 transition">Use Cases</a>
+                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                    <a href="blog.html" class="text-gray-400 hover:text-cyan-400 transition">Blog</a>
+                    <button data-logout class="text-gray-400 hover:text-cyan-400 transition">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main id="mainContent" class="hidden pt-24 pb-12">
+        <div class="container mx-auto px-6">
+            
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-4xl font-bold mb-2">Dashboard</h1>
+                <p class="text-gray-400">Monitor your blockchain indexing activity</p>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm mb-1">Total Events</p>
+                            <p class="text-3xl font-bold text-cyan-400">1.2M</p>
+                        </div>
+                        <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="text-sm text-green-400">↑ 12% from last month</p>
+                </div>
+                
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm mb-1">Active Jobs</p>
+                            <p class="text-3xl font-bold">5</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-600/10 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500">2 processing now</p>
+                </div>
+                
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm mb-1">Credit Balance</p>
+                            <p class="text-3xl font-bold">1,000</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-600/10 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                                <path d="M12 18V6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <a href="pricing.html" class="text-sm text-cyan-400 hover:text-cyan-300">Add credits →</a>
+                </div>
+                
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm mb-1">Verified Hashes</p>
+                            <p class="text-3xl font-bold">847K</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-600/10 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <path d="m9 12 2 2 4-4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500">70% of total events</p>
+                </div>
+                
+            </div>
+            
+            <!-- Create Job -->
+            <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-6">Create Indexing Job</h2>
+                
+                <form id="createJobForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="contractAddress" class="block text-sm font-medium mb-2">Contract Address</label>
+                            <input 
+                                type="text" 
+                                id="contractAddress" 
+                                name="contractAddress" 
+                                placeholder="0x..."
+                                required
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 font-mono text-sm"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="blockchain" class="block text-sm font-medium mb-2">Blockchain</label>
+                            <select 
+                                id="blockchain" 
+                                name="blockchain"
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
+                            >
+                                <option value="ethereum">Ethereum</option>
+                                <option value="polygon">Polygon</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="eventName" class="block text-sm font-medium mb-2">Event Name (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="eventName" 
+                                name="eventName" 
+                                placeholder="Transfer, Swap, etc."
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="startBlock" class="block text-sm font-medium mb-2">Start Block (Optional)</label>
+                            <input 
+                                type="number" 
+                                id="startBlock" 
+                                name="startBlock" 
+                                placeholder="18524031"
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
+                            >
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <input 
+                            type="checkbox" 
+                            id="enableIPFS" 
+                            name="enableIPFS"
+                            class="w-4 h-4 mt-1 bg-gray-800 border-gray-700 rounded text-cyan-600 focus:ring-cyan-600"
+                        >
+                        <label for="enableIPFS" class="ml-2 text-sm text-gray-400">
+                            Enable IPFS storage for indexed events
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button 
+                            type="submit" 
+                            class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition"
+                        >
+                            Start Indexing
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Recent Events -->
+            <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-800 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Recent Blockchain Events</h2>
+                    <button class="text-cyan-400 hover:text-cyan-300 text-sm font-medium">
+                        View all →
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full" data-events-table>
+                        <thead>
+                            <tr class="text-left text-gray-400 border-b border-gray-800">
+                                <th class="px-6 py-3 font-medium">Contract</th>
+                                <th class="px-6 py-3 font-medium">Event</th>
+                                <th class="px-6 py-3 font-medium">Block</th>
+                                <th class="px-6 py-3 font-medium">Chain</th>
+                                <th class="px-6 py-3 font-medium">Timestamp</th>
+                                <th class="px-6 py-3 font-medium">Status</th>
+                                <th class="px-6 py-3 font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800" id="eventsTableBody">
+                            <tr class="hover:bg-gray-800/50">
+                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0x1f9840...C02aaA</td>
+                                <td class="px-6 py-4">Transfer</td>
+                                <td class="px-6 py-4 text-gray-400">18524031</td>
+                                <td class="px-6 py-4">
+                                    <span class="text-cyan-400">Ethereum</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-400 text-sm">2 mins ago</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center text-xs text-green-400">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Verified
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-800/50">
+                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0x7a250d...56978a</td>
+                                <td class="px-6 py-4">Approval</td>
+                                <td class="px-6 py-4 text-gray-400">18524029</td>
+                                <td class="px-6 py-4">
+                                    <span class="text-purple-400">Polygon</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-400 text-sm">5 mins ago</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center text-xs text-green-400">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Verified
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-800/50">
+                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0xa0b8699...9c5204</td>
+                                <td class="px-6 py-4">Swap</td>
+                                <td class="px-6 py-4 text-gray-400">18524027</td>
+                                <td class="px-6 py-4">
+                                    <span class="text-cyan-400">Ethereum</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-400 text-sm">8 mins ago</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center text-xs text-yellow-400">
+                                        <svg class="w-3 h-3 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Processing
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-800/50">
+                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0x88e6a0...3b5c0c</td>
+                                <td class="px-6 py-4">Mint</td>
+                                <td class="px-6 py-4 text-gray-400">18524025</td>
+                                <td class="px-6 py-4">
+                                    <span class="text-purple-400">Polygon</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-400 text-sm">12 mins ago</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center text-xs text-green-400">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Verified
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-800/50">
+                                <td class="px-6 py-4 font-mono text-xs text-gray-300">0xc02aaa...39b223</td>
+                                <td class="px-6 py-4">Deposit</td>
+                                <td class="px-6 py-4 text-gray-400">18524023</td>
+                                <td class="px-6 py-4">
+                                    <span class="text-cyan-400">Ethereum</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-400 text-sm">15 mins ago</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center text-xs text-green-400">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Verified
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-cyan-400 hover:text-cyan-300 text-sm">View</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
+                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
+                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

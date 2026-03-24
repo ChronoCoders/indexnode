@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Cases - IndexNode</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Discover how IndexNode powers DeFi analytics, NFT marketplaces, blockchain analytics, gaming, and DAO governance with trustless data verification.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/tailwind.min.css">
+<style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .use-case-card {
+            transition: all 0.3s ease;
+        }
+        .use-case-card:hover {
+            border-color: #06b6d4;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                    <a href="use-cases.html" class="text-cyan-400 font-medium">Use Cases</a>
+                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                    <a href="blog.html" class="text-gray-400 hover:text-cyan-400 transition">Blog</a>
+                    <a href="login.html" class="text-gray-400 hover:text-cyan-400 transition">Login</a>
+                    <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero -->
+    <section class="pt-32 pb-16 bg-gradient-to-b from-gray-950 to-gray-900">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                    Built for Web3
+                </h1>
+                <p class="text-xl text-gray-400 leading-relaxed">
+                    Powering trustless data verification across DeFi, NFTs, analytics, gaming, and governance
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Use Cases -->
+    <section class="py-24 bg-gray-950">
+        <div class="container mx-auto px-6">
+            
+            <!-- Use Case 1: DeFi Analytics -->
+            <div class="max-w-5xl mx-auto mb-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="inline-block bg-cyan-600/10 text-cyan-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                            DeFi Analytics
+                        </div>
+                        <h2 class="text-4xl font-bold mb-6">Real-Time Trading Analytics</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Index swap events from Uniswap, SushiSwap, and other DEXs to provide traders with verifiable, real-time market data. Every price point and volume metric is cryptographically proven.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Track token swaps, liquidity adds/removes, and price impact</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Real-time WebSocket subscriptions for live trading data</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Verifiable historical data for backtesting strategies</span>
+                            </li>
+                        </ul>
+                        <a href="docs.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                            View integration guide
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">Query DEX Swaps</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">DexSwaps</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+    <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Swap"</span>
+  ) {
+    <span class="text-gray-300">tokenIn</span>
+    <span class="text-gray-300">tokenOut</span>
+    <span class="text-gray-300">amountIn</span>
+    <span class="text-gray-300">amountOut</span>
+    <span class="text-gray-300">timestamp</span>
+    <span class="text-gray-300">merkleProof</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Use Case 2: NFT Marketplaces -->
+            <div class="max-w-5xl mx-auto mb-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 md:order-1 bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">Track NFT Transfers</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">subscription</span> <span class="text-blue-400">NFTTransfers</span> {
+  <span class="text-gray-300">blockchainEventAdded</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+    <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Transfer"</span>
+  ) {
+    <span class="text-gray-300">from</span>
+    <span class="text-gray-300">to</span>
+    <span class="text-gray-300">tokenId</span>
+    <span class="text-gray-300">timestamp</span>
+    <span class="text-gray-300">ipfsUrl</span>
+  }
+}</code></pre>
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <div class="inline-block bg-purple-600/10 text-purple-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                            NFT Marketplaces
+                        </div>
+                        <h2 class="text-4xl font-bold mb-6">Verified Provenance Tracking</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Provide buyers with cryptographically verifiable ownership history. Every transfer, sale, and listing is timestamped on-chain with Merkle proof verification.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Complete ownership history with on-chain verification</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">IPFS-backed metadata for permanent availability</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Real-time notifications for listings and sales</span>
+                            </li>
+                        </ul>
+                        <a href="docs.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                            View integration guide
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Use Case 3: Blockchain Analytics -->
+            <div class="max-w-5xl mx-auto mb-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="inline-block bg-blue-600/10 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                            Blockchain Analytics
+                        </div>
+                        <h2 class="text-4xl font-bold mb-6">On-Chain Intelligence Platforms</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Build analytics dashboards that researchers and institutions can trust. All metrics are derived from cryptographically verified on-chain data.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Track protocol metrics with verifiable data sources</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Monitor smart contract interactions across chains</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Export verifiable datasets for research</span>
+                            </li>
+                        </ul>
+                        <a href="docs.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                            View integration guide
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">Protocol TVL Query</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">ProtocolTVL</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Deposit"</span>
+  ) {
+    <span class="text-gray-300">amount</span>
+    <span class="text-gray-300">token</span>
+    <span class="text-gray-300">timestamp</span>
+    <span class="text-gray-300">merkleProof</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Use Case 4: Gaming & Metaverse -->
+            <div class="max-w-5xl mx-auto mb-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 md:order-1 bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">Track In-Game Items</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">ItemTransfers</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">eventName</span>: <span class="text-green-400">"ItemCrafted"</span>
+  ) {
+    <span class="text-gray-300">player</span>
+    <span class="text-gray-300">itemId</span>
+    <span class="text-gray-300">rarity</span>
+    <span class="text-gray-300">verifiedAt</span>
+  }
+}</code></pre>
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <div class="inline-block bg-green-600/10 text-green-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                            Gaming & Metaverse
+                        </div>
+                        <h2 class="text-4xl font-bold mb-6">Verified In-Game Assets</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Track player inventories, crafting events, and marketplace trades with cryptographic proof. Players can verify item authenticity and rarity independently.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Index crafting, trading, and inventory events</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Prevent item duplication with on-chain verification</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Real-time leaderboards with verifiable scores</span>
+                            </li>
+                        </ul>
+                        <a href="docs.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                            View integration guide
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Use Case 5: DAO Governance -->
+            <div class="max-w-5xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="inline-block bg-orange-600/10 text-orange-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                            DAO Governance
+                        </div>
+                        <h2 class="text-4xl font-bold mb-6">Transparent Voting Records</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Provide DAO members with verifiable voting history and proposal outcomes. All governance actions are timestamped on-chain with cryptographic proof.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Index proposal creation, voting, and execution</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Verifiable voter participation and delegation records</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Real-time notifications for new proposals</span>
+                            </li>
+                        </ul>
+                        <a href="docs.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                            View integration guide
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">Track Governance Votes</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GovernanceVotes</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">eventName</span>: <span class="text-green-400">"VoteCast"</span>
+  ) {
+    <span class="text-gray-300">proposalId</span>
+    <span class="text-gray-300">voter</span>
+    <span class="text-gray-300">support</span>
+    <span class="text-gray-300">weight</span>
+    <span class="text-gray-300">merkleProof</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+    
+    <!-- CTA -->
+    <section class="py-24 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border-t border-gray-800">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-bold mb-6">
+                Ready to Build Your Use Case?
+            </h2>
+            <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                Start indexing blockchain events with cryptographic verification today
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
+                    Start Free Trial
+                </a>
+                <a href="docs.html" class="border border-gray-700 hover:border-cyan-600 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
+                    Read Documentation
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
+                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
+                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

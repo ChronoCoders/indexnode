@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introducing IndexNode: Trustless Blockchain Intelligence - IndexNode Blog</title>
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <meta name="description" content="Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://indexnode.io/blog/introducing-indexnode.html">
+    <meta property="og:title" content="Introducing IndexNode: Trustless Blockchain Intelligence">
+    <meta property="og:description" content="Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification.">
+    <meta property="og:image" content="https://indexnode.io/images/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://indexnode.io/blog/introducing-indexnode.html">
+    <meta property="twitter:title" content="Introducing IndexNode: Trustless Blockchain Intelligence">
+    <meta property="twitter:description" content="Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification.">
+    <meta property="twitter:image" content="https://indexnode.io/images/og-image.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <a href="../index.html" class="nav-logo">IndexNode</a>
+            
+            <button id="mobileMenuBtn" class="mobile-menu-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <div class="nav-links">
+                <a href="../features.html">Features</a>
+                <a href="../use-cases.html">Use Cases</a>
+                <a href="../pricing.html">Pricing</a>
+                <a href="../docs.html">Docs</a>
+                <a href="../blog.html">Blog</a>
+                <a href="../login.html">Login</a>
+                <a href="../signup.html" class="btn-primary">Get Started</a>
+            </div>
+        </div>
+        
+        <div id="mobileMenu" class="mobile-menu">
+            <a href="../features.html">Features</a>
+            <a href="../use-cases.html">Use Cases</a>
+            <a href="../pricing.html">Pricing</a>
+            <a href="../docs.html">Docs</a>
+            <a href="../blog.html">Blog</a>
+                <a href="../login.html">Login</a>
+            <a href="../signup.html">Get Started</a>
+        </div>
+    </nav>
+    
+    <!-- Article -->
+    <article class="pt-32" style="padding-bottom: 6rem;">
+        <div class="container">
+            <div class="max-w-3xl">
+                
+                <!-- Header -->
+                <header class="mb-12">
+                    <a href="../blog.html" class="text-cyan" style="display: inline-flex; align-items: center; margin-bottom: 1.5rem; text-decoration: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Back to Blog
+                    </a>
+                    
+                    <div class="flex gap-3 mb-6" style="align-items: center;">
+                        <span class="badge">Featured</span>
+                        <span style="color: var(--gray-500); font-size: 0.875rem;">February 1, 2026</span>
+                        <span style="color: var(--gray-500);">•</span>
+                        <span style="color: var(--gray-500); font-size: 0.875rem;">8 min read</span>
+                    </div>
+                    
+                    <h1 style="font-size: 3rem; line-height: 1.1;">
+                        Introducing IndexNode: Trustless Blockchain Intelligence
+                    </h1>
+                    
+                    <div class="flex gap-4 mt-8" style="align-items: center;">
+                        <div style="width: 3rem; height: 3rem; background-color: var(--gray-800); border-radius: 9999px; display: flex; align-items: center; justify-content: center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium">Distributed Systems Labs</p>
+                            <p style="font-size: 0.875rem; color: var(--gray-500);">Engineering Team</p>
+                        </div>
+                    </div>
+                </header>
+                
+                <!-- Content -->
+                <div class="prose">
+                    
+                    <p class="text-xl leading-relaxed mb-8">
+                        Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification. Most blockchain indexing services require users to trust centralized providers. IndexNode changes this with on-chain timestamping and cryptographic Merkle proofs.
+                    </p>
+                    
+                    <h2>The Trust Problem in Blockchain Indexing</h2>
+                    <p>
+                        Every major DeFi protocol, NFT marketplace, and blockchain application relies on indexed data. When you check your wallet balance, view transaction history, or analyze protocol metrics, you're consuming indexed blockchain data.
+                    </p>
+                    <p>
+                        The problem? Most indexing services are centralized black boxes. Users must trust that:
+                    </p>
+                    <ul>
+                        <li>The data hasn't been tampered with</li>
+                        <li>Events are indexed accurately and completely</li>
+                        <li>The service provider isn't censoring or manipulating results</li>
+                        <li>Historical data matches what actually happened on-chain</li>
+                    </ul>
+                    <p>
+                        This creates a fundamental contradiction: we're building trustless applications on top of trusted infrastructure.
+                    </p>
+                    
+                    <h2>How IndexNode Works</h2>
+                    <p>
+                        IndexNode brings cryptographic verification to blockchain indexing through three core mechanisms:
+                    </p>
+                    
+                    <h3>1. On-Chain Timestamping</h3>
+                    <p>
+                        Every indexed event is hashed and committed to Ethereum or Polygon smart contracts. This creates an immutable, on-chain timestamp that proves when data was indexed. You can verify this timestamp independently by querying the blockchain.
+                    </p>
+                    
+                    <h3>2. Merkle Tree Proofs</h3>
+                    <p>
+                        We batch event hashes into Merkle trees and commit the root hash on-chain. This allows efficient verification: you only need the Merkle proof (a few sibling hashes) to cryptographically prove any event's authenticity without trusting IndexNode.
+                    </p>
+                    
+                    <h3>3. IPFS Storage</h3>
+                    <p>
+                        All indexed data is optionally backed up to IPFS with automatic pinning via Pinata. Content-addressed storage ensures data permanence and censorship resistance.
+                    </p>
+                    
+                    <h2>Real-World Impact</h2>
+                    <p>
+                        Consider a DeFi analytics dashboard showing $10M in daily trading volume. With traditional indexing, users must trust this number. With IndexNode:
+                    </p>
+                    <ol>
+                        <li>Every swap event has a Merkle proof</li>
+                        <li>The proof can be verified against the on-chain Merkle root</li>
+                        <li>Volume calculations become independently auditable</li>
+                        <li>Any discrepancy is cryptographically detectable</li>
+                    </ol>
+                    <p>
+                        This transforms "trust me" data into "verify yourself" data.
+                    </p>
+                    
+                    <h2>Production-Ready Infrastructure</h2>
+                    <p>
+                        IndexNode is built for production use from day one:
+                    </p>
+                    <ul>
+                        <li>99.9% uptime SLA on Pro and Enterprise plans</li>
+                        <li>Sub-50ms API response times</li>
+                        <li>Real-time WebSocket subscriptions</li>
+                        <li>Rust backend for memory safety and performance</li>
+                        <li>GraphQL API with type-safe queries</li>
+                    </ul>
+                    
+                    <h2>Getting Started</h2>
+                    <p>
+                        We're offering a free tier with 10,000 events per month. No credit card required. Create an account, generate an API key, and start indexing in minutes.
+                    </p>
+                    <p>
+                        Check out our documentation for integration guides, SDK examples, and best practices.
+                    </p>
+                    
+                    <div class="card mt-12">
+                        <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">Start Building with IndexNode</h3>
+                        <p class="mb-6">
+                            Join developers building trustless applications with verifiable blockchain data.
+                        </p>
+                        <div class="flex gap-4" style="flex-wrap: wrap;">
+                            <a href="../dashboard.html" class="btn-primary">
+                                Get Started Free
+                            </a>
+                            <a href="../docs.html" class="btn-secondary">
+                                Read Documentation
+                            </a>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+        </div>
+    </article>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="grid grid-cols-4">
+                <div>
+                    <span style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">IndexNode</span>
+                    <p style="font-size: 0.875rem;">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="../features.html">Features</a></li>
+                        <li><a href="../pricing.html">Pricing</a></li>
+                        <li><a href="../use-cases.html">Use Cases</a></li>
+                        <li><a href="../docs.html">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="../about.html">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" target="_blank">GitHub</a></li>
+                        <li><a href="../blog.html">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="../privacy.html">Privacy</a></li>
+                        <li><a href="../terms.html">Terms</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="../js/main.js"></script>
+</body>
+</html>
