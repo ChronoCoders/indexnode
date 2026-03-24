@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introducing IndexNode: Trustless Blockchain Intelligence - IndexNode Blog</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        gray: {
+                            950: '#0a0a0a',
+                            900: '#171717',
+                            800: '#262626',
+                            700: '#404040',
+                            400: '#a3a3a3',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="../index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="../features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                    <a href="../use-cases.html" class="text-gray-400 hover:text-cyan-400 transition">Use Cases</a>
+                    <a href="../pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="../docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                    <a href="../login.html" class="text-gray-400 hover:text-cyan-400 transition">Login</a>
+                    <a href="../signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Article -->
+    <article class="pt-32 pb-24">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto">
+                
+                <!-- Header -->
+                <header class="mb-12">
+                    <a href="/blog" class="text-cyan-400 hover:text-cyan-300 inline-flex items-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Back to Blog
+                    </a>
+                    
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="bg-cyan-600/10 text-cyan-400 px-3 py-1 rounded-full text-sm font-medium">Featured</span>
+                        <span class="text-gray-500">February 1, 2026</span>
+                        <span class="text-gray-500">•</span>
+                        <span class="text-gray-500">8 min read</span>
+                    </div>
+                    
+                    <h1 class="text-5xl font-bold mb-6 leading-tight">
+                        Introducing IndexNode: Trustless Blockchain Intelligence
+                    </h1>
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium">Distributed Systems Labs</p>
+                            <p class="text-sm text-gray-500">Engineering Team</p>
+                        </div>
+                    </div>
+                </header>
+                
+                <!-- Content -->
+                <div class="prose prose-invert max-w-none">
+                    
+                    <p class="text-xl text-gray-400 leading-relaxed mb-8">
+                        Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification. Most blockchain indexing services require users to trust centralized providers. IndexNode changes this with on-chain timestamping and cryptographic Merkle proofs.
+                    </p>
+                    
+                    <h2 class="text-3xl font-bold mb-4 mt-12">The Trust Problem in Blockchain Indexing</h2>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Every major DeFi protocol, NFT marketplace, and blockchain application relies on indexed data. When you check your wallet balance, view transaction history, or analyze protocol metrics, you're consuming indexed blockchain data.
+                    </p>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        The problem? Most indexing services are centralized black boxes. Users must trust that:
+                    </p>
+                    <ul class="list-disc pl-6 text-gray-400 space-y-2 mb-6">
+                        <li>The data hasn't been tampered with</li>
+                        <li>Events are indexed accurately and completely</li>
+                        <li>The service provider isn't censoring or manipulating results</li>
+                        <li>Historical data matches what actually happened on-chain</li>
+                    </ul>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        This creates a fundamental contradiction: we're building trustless applications on top of trusted infrastructure.
+                    </p>
+                    
+                    <h2 class="text-3xl font-bold mb-4 mt-12">How IndexNode Works</h2>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        IndexNode brings cryptographic verification to blockchain indexing through three core mechanisms:
+                    </p>
+                    
+                    <h3 class="text-2xl font-semibold mb-4">1. On-Chain Timestamping</h3>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Every indexed event is hashed and committed to Ethereum or Polygon smart contracts. This creates an immutable, on-chain timestamp that proves when data was indexed. You can verify this timestamp independently by querying the blockchain.
+                    </p>
+                    
+                    <h3 class="text-2xl font-semibold mb-4">2. Merkle Tree Proofs</h3>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        We batch event hashes into Merkle trees and commit the root hash on-chain. This allows efficient verification: you only need the Merkle proof (a few sibling hashes) to cryptographically prove any event's authenticity without trusting IndexNode.
+                    </p>
+                    
+                    <h3 class="text-2xl font-semibold mb-4">3. IPFS Storage</h3>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        All indexed data is optionally backed up to IPFS with automatic pinning via Pinata. Content-addressed storage ensures data permanence and censorship resistance.
+                    </p>
+                    
+                    <h2 class="text-3xl font-bold mb-4 mt-12">Real-World Impact</h2>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Consider a DeFi analytics dashboard showing $10M in daily trading volume. With traditional indexing, users must trust this number. With IndexNode:
+                    </p>
+                    <ol class="list-decimal pl-6 text-gray-400 space-y-2 mb-6">
+                        <li>Every swap event has a Merkle proof</li>
+                        <li>The proof can be verified against the on-chain Merkle root</li>
+                        <li>Volume calculations become independently auditable</li>
+                        <li>Any discrepancy is cryptographically detectable</li>
+                    </ol>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        This transforms "trust me" data into "verify yourself" data.
+                    </p>
+                    
+                    <h2 class="text-3xl font-bold mb-4 mt-12">Production-Ready Infrastructure</h2>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        IndexNode is built for production use from day one:
+                    </p>
+                    <ul class="list-disc pl-6 text-gray-400 space-y-2 mb-6">
+                        <li>99.9% uptime SLA on Pro and Enterprise plans</li>
+                        <li>Sub-50ms API response times</li>
+                        <li>Real-time WebSocket subscriptions</li>
+                        <li>Rust backend for memory safety and performance</li>
+                        <li>GraphQL API with type-safe queries</li>
+                    </ul>
+                    
+                    <h2 class="text-3xl font-bold mb-4 mt-12">Getting Started</h2>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        We're offering a free tier with 10,000 events per month. No credit card required. Create an account, generate an API key, and start indexing in minutes.
+                    </p>
+                    <p class="text-gray-400 leading-relaxed mb-6">
+                        Check out our documentation for integration guides, SDK examples, and best practices.
+                    </p>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mt-12">
+                        <h3 class="text-xl font-semibold mb-4">Start Building with IndexNode</h3>
+                        <p class="text-gray-400 mb-6">
+                            Join developers building trustless applications with verifiable blockchain data.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <a href="/dashboard" class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium text-center transition">
+                                Get Started Free
+                            </a>
+                            <a href="/docs" class="border border-gray-700 hover:border-cyan-600 px-6 py-3 rounded-md font-medium text-center transition">
+                                Read Documentation
+                            </a>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+        </div>
+    </article>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/features" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="/pricing" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="/use-cases" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="/docs" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/about" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="/blog" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/privacy" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="/terms" class="hover:text-cyan-400 transition">Terms</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

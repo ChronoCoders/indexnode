@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - IndexNode</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Complete API documentation for IndexNode blockchain indexing platform. GraphQL queries, WebSocket subscriptions, and integration guides.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/tailwind.min.css">
+<style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        .sidebar-nav a {
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-nav a:hover {
+            color: #06b6d4;
+        }
+        
+        .sidebar-nav a.active {
+            color: #06b6d4;
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 2px solid #06b6d4;
+        }
+        
+        .code-block {
+            background: #171717;
+            border: 1px solid #262626;
+            border-radius: 8px;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                    <a href="use-cases.html" class="text-gray-400 hover:text-cyan-400 transition">Use Cases</a>
+                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="docs.html" class="text-cyan-400 font-medium">Docs</a>
+                    <a href="blog.html" class="text-gray-400 hover:text-cyan-400 transition">Blog</a>
+                    <a href="login.html" class="text-gray-400 hover:text-cyan-400 transition">Login</a>
+                    <a href="dashboard.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="flex pt-16">
+        
+        <!-- Sidebar -->
+        <aside class="hidden lg:block w-64 h-screen sticky top-16 overflow-y-auto border-r border-gray-800 bg-gray-950">
+            <nav class="p-6 sidebar-nav">
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">Getting Started</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#introduction" class="block px-3 py-2 rounded text-sm">Introduction</a></li>
+                        <li><a href="#quickstart" class="block px-3 py-2 rounded text-sm">Quick Start</a></li>
+                        <li><a href="#authentication" class="block px-3 py-2 rounded text-sm">Authentication</a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">API Reference</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#graphql" class="block px-3 py-2 rounded text-sm">GraphQL API</a></li>
+                        <li><a href="#queries" class="block px-3 py-2 rounded text-sm">Queries</a></li>
+                        <li><a href="#subscriptions" class="block px-3 py-2 rounded text-sm">Subscriptions</a></li>
+                        <li><a href="#mutations" class="block px-3 py-2 rounded text-sm">Mutations</a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">Features</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#timestamping" class="block px-3 py-2 rounded text-sm">On-Chain Timestamping</a></li>
+                        <li><a href="#ipfs" class="block px-3 py-2 rounded text-sm">IPFS Storage</a></li>
+                        <li><a href="#verification" class="block px-3 py-2 rounded text-sm">Merkle Verification</a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">SDKs</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#javascript" class="block px-3 py-2 rounded text-sm">JavaScript</a></li>
+                        <li><a href="#python" class="block px-3 py-2 rounded text-sm">Python</a></li>
+                        <li><a href="#rust" class="block px-3 py-2 rounded text-sm">Rust</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">Resources</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#examples" class="block px-3 py-2 rounded text-sm">Code Examples</a></li>
+                        <li><a href="#best-practices" class="block px-3 py-2 rounded text-sm">Best Practices</a></li>
+                        <li><a href="#faq" class="block px-3 py-2 rounded text-sm">FAQ</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 px-6 lg:px-12 py-12 max-w-4xl">
+            
+            <!-- Introduction -->
+            <section id="introduction" class="mb-16 scroll-mt-24">
+                <h1 class="text-5xl font-bold mb-6">Documentation</h1>
+                <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                    Welcome to IndexNode. This guide will help you integrate blockchain event indexing with cryptographic verification into your application.
+                </p>
+                <div class="bg-cyan-600/10 border border-cyan-600/20 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-cyan-400 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="font-medium mb-2">API Endpoint</p>
+                            <code class="text-sm text-cyan-300">https://api.indexnode.io/v1/graphql</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Quick Start -->
+            <section id="quickstart" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Quick Start</h2>
+                <p class="text-gray-400 mb-6">Get started with IndexNode in 5 minutes.</p>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3">1. Get Your API Key</h3>
+                        <p class="text-gray-400 mb-4">Sign up and generate an API key from your dashboard.</p>
+                        <div class="code-block p-4">
+                            <pre class="font-mono text-sm"><code class="text-gray-300">curl https://api.indexnode.io/v1/auth/signup \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "password": "your_password"}'</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3">2. Make Your First Query</h3>
+                        <p class="text-gray-400 mb-4">Query blockchain events using GraphQL.</p>
+                        <div class="code-block p-4">
+                            <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetEvents</span> {
+  <span class="text-gray-300">blockchainEvents</span>(<span class="text-purple-400">limit</span>: <span class="text-green-400">10</span>) {
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">contractAddress</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3">3. Verify Data</h3>
+                        <p class="text-gray-400 mb-4">Verify event data with on-chain Merkle proofs.</p>
+                        <div class="code-block p-4">
+                            <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">VerifyEvent</span> {
+  <span class="text-gray-300">verifyMerkleProof</span>(
+    <span class="text-purple-400">eventId</span>: <span class="text-green-400">"evt_123"</span>
+  ) {
+    <span class="text-gray-300">isValid</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">merkleRoot</span>
+    <span class="text-gray-300">proof</span>
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Authentication -->
+            <section id="authentication" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Authentication</h2>
+                <p class="text-gray-400 mb-6">IndexNode uses JWT tokens for authentication.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">Login and Get Token</h3>
+                <div class="code-block p-4 mb-6">
+                    <pre class="font-mono text-sm"><code class="text-gray-300">curl https://api.indexnode.io/v1/auth/login \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "you@example.com",
+    "password": "your_password"
+  }'
+
+<span class="text-gray-500"># Response:</span>
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 86400
+}</code></pre>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Use Token in Requests</h3>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300">curl https://api.indexnode.io/v1/graphql \
+  -X POST \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ blockchainEvents { id } }"}'</code></pre>
+                </div>
+            </section>
+            
+            <!-- GraphQL API -->
+            <section id="graphql" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">GraphQL API</h2>
+                <p class="text-gray-400 mb-6">IndexNode provides a type-safe GraphQL API for querying blockchain data.</p>
+                
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Endpoint</h3>
+                    <code class="text-cyan-400">POST https://api.indexnode.io/v1/graphql</code>
+                    
+                    <h3 class="text-lg font-semibold mt-6 mb-4">WebSocket (Subscriptions)</h3>
+                    <code class="text-cyan-400">wss://api.indexnode.io/v1/graphql</code>
+                </div>
+            </section>
+            
+            <!-- Queries -->
+            <section id="queries" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Queries</h2>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">blockchainEvents</h3>
+                    <p class="text-gray-400 mb-4">Retrieve blockchain events with filtering and pagination.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">BlockchainEvents</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+    <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Transfer"</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">50</span>
+    <span class="text-purple-400">offset</span>: <span class="text-green-400">0</span>
+  ) {
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">contractAddress</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">timestamp</span>
+    <span class="text-gray-300">merkleProof</span>
+    <span class="text-gray-300">verifiedAt</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">verifyMerkleProof</h3>
+                    <p class="text-gray-400 mb-4">Verify the authenticity of an indexed event.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">VerifyEvent</span> {
+  <span class="text-gray-300">verifyMerkleProof</span>(
+    <span class="text-purple-400">eventId</span>: <span class="text-green-400">"evt_abc123"</span>
+  ) {
+    <span class="text-gray-300">isValid</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">merkleRoot</span>
+    <span class="text-gray-300">proof</span>
+    <span class="text-gray-300">contentHash</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">ipfsContent</h3>
+                    <p class="text-gray-400 mb-4">Retrieve content from IPFS by CID.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetIPFSContent</span> {
+  <span class="text-gray-300">ipfsContent</span>(
+    <span class="text-purple-400">cid</span>: <span class="text-green-400">"QmX..."</span>
+  ) {
+    <span class="text-gray-300">cid</span>
+    <span class="text-gray-300">content</span>
+    <span class="text-gray-300">pinnedAt</span>
+    <span class="text-gray-300">gatewayUrl</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Subscriptions -->
+            <section id="subscriptions" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Subscriptions</h2>
+                <p class="text-gray-400 mb-6">Real-time updates via WebSocket subscriptions.</p>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">blockchainEventAdded</h3>
+                    <p class="text-gray-400 mb-4">Subscribe to new blockchain events as they're indexed.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">subscription</span> <span class="text-blue-400">OnNewEvent</span> {
+  <span class="text-gray-300">blockchainEventAdded</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+  ) {
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">contractAddress</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">timestamp</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Mutations -->
+            <section id="mutations" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Mutations</h2>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">createIndexingJob</h3>
+                    <p class="text-gray-400 mb-4">Create a new blockchain indexing job.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">CreateJob</span> {
+  <span class="text-gray-300">createIndexingJob</span>(
+    <span class="text-purple-400">input</span>: {
+      <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+      <span class="text-purple-400">chain</span>: <span class="text-green-400">ETHEREUM</span>
+      <span class="text-purple-400">startBlock</span>: <span class="text-green-400">18500000</span>
+    }
+  ) {
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">status</span>
+    <span class="text-gray-300">contractAddress</span>
+    <span class="text-gray-300">createdAt</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">uploadToIPFS</h3>
+                    <p class="text-gray-400 mb-4">Upload content to IPFS with automatic pinning.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">UploadContent</span> {
+  <span class="text-gray-300">uploadToIPFS</span>(
+    <span class="text-purple-400">content</span>: <span class="text-green-400">"Your content here"</span>
+    <span class="text-purple-400">pin</span>: <span class="text-green-400">true</span>
+  ) {
+    <span class="text-gray-300">cid</span>
+    <span class="text-gray-300">url</span>
+    <span class="text-gray-300">gatewayUrl</span>
+    <span class="text-gray-300">pinnedAt</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- On-Chain Timestamping -->
+            <section id="timestamping" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">On-Chain Timestamping</h2>
+                <p class="text-gray-400 mb-6">Create immutable, cryptographic proof of when your data was indexed.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">How It Works</h3>
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                    <ol class="space-y-4 text-gray-400">
+                        <li class="flex items-start">
+                            <span class="text-cyan-400 font-bold mr-3">1.</span>
+                            <span>IndexNode indexes blockchain events and computes a SHA-256 hash of the event data</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-cyan-400 font-bold mr-3">2.</span>
+                            <span>Content hashes are batched into a Merkle tree for efficient verification</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-cyan-400 font-bold mr-3">3.</span>
+                            <span>The Merkle root is committed to an Ethereum or Polygon smart contract</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-cyan-400 font-bold mr-3">4.</span>
+                            <span>You receive a transaction hash and block number as proof of timestamp</span>
+                        </li>
+                    </ol>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Query Timestamp Proof</h3>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetTimestamp</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">id</span>: <span class="text-green-400">"evt_abc123"</span>
+  ) {
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">merkleRoot</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">verifiedAt</span>
+    <span class="text-gray-300">chain</span>
+  }
+}</code></pre>
+                </div>
+            </section>
+            
+            <!-- IPFS Storage -->
+            <section id="ipfs" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">IPFS Storage</h2>
+                <p class="text-gray-400 mb-6">Store indexed blockchain data on IPFS with automatic pinning via Pinata.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">Upload Content</h3>
+                <div class="code-block p-4 mb-6">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">UploadToIPFS</span> {
+  <span class="text-gray-300">uploadToIPFS</span>(
+    <span class="text-purple-400">content</span>: <span class="text-green-400">"event_data_json"</span>
+    <span class="text-purple-400">pin</span>: <span class="text-green-400">true</span>
+  ) {
+    <span class="text-gray-300">cid</span>
+    <span class="text-gray-300">url</span>
+    <span class="text-gray-300">gatewayUrl</span>
+    <span class="text-gray-300">size</span>
+    <span class="text-gray-300">pinnedAt</span>
+  }
+}
+
+<span class="text-gray-500"># Response:</span>
+{
+  <span class="text-purple-400">"cid"</span>: <span class="text-green-400">"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"</span>,
+  <span class="text-purple-400">"url"</span>: <span class="text-green-400">"ipfs://QmYw..."</span>,
+  <span class="text-purple-400">"gatewayUrl"</span>: <span class="text-green-400">"https://gateway.pinata.cloud/ipfs/QmYw..."</span>,
+  <span class="text-purple-400">"pinnedAt"</span>: <span class="text-green-400">"2026-02-04T10:30:00Z"</span>
+}</code></pre>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Retrieve Content</h3>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetFromIPFS</span> {
+  <span class="text-gray-300">ipfsContent</span>(
+    <span class="text-purple-400">cid</span>: <span class="text-green-400">"QmYw..."</span>
+  ) {
+    <span class="text-gray-300">cid</span>
+    <span class="text-gray-300">content</span>
+    <span class="text-gray-300">gatewayUrl</span>
+  }
+}</code></pre>
+                </div>
+                
+                <div class="bg-cyan-600/10 border border-cyan-600/20 rounded-lg p-6 mt-6">
+                    <p class="text-sm text-gray-300">
+                        <strong>Note:</strong> All indexed events are automatically backed up to IPFS on Pro and Enterprise plans. Free tier requires manual upload.
+                    </p>
+                </div>
+            </section>
+            
+            <!-- Merkle Verification -->
+            <section id="verification" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Merkle Verification</h2>
+                <p class="text-gray-400 mb-6">Verify event authenticity using cryptographic Merkle proofs.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">How Merkle Proofs Work</h3>
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+                    <p class="text-gray-400 mb-4">
+                        Merkle trees allow efficient verification of large datasets. Instead of checking every event on-chain, you only need:
+                    </p>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            The event's content hash
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            A small proof (sibling hashes)
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            The Merkle root (stored on-chain)
+                        </li>
+                    </ul>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Verify an Event</h3>
+                <div class="code-block p-4 mb-6">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">VerifyEvent</span> {
+  <span class="text-gray-300">verifyMerkleProof</span>(
+    <span class="text-purple-400">eventId</span>: <span class="text-green-400">"evt_abc123"</span>
+  ) {
+    <span class="text-gray-300">isValid</span>
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">merkleRoot</span>
+    <span class="text-gray-300">proof</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+  }
+}
+
+<span class="text-gray-500"># Response:</span>
+{
+  <span class="text-purple-400">"isValid"</span>: <span class="text-green-400">true</span>,
+  <span class="text-purple-400">"contentHash"</span>: <span class="text-green-400">"0x3d4f..."</span>,
+  <span class="text-purple-400">"merkleRoot"</span>: <span class="text-green-400">"0xa7c9..."</span>,
+  <span class="text-purple-400">"proof"</span>: [<span class="text-green-400">"0x1234..."</span>, <span class="text-green-400">"0x5678..."</span>],
+  <span class="text-purple-400">"blockNumber"</span>: <span class="text-green-400">18524031</span>,
+  <span class="text-purple-400">"transactionHash"</span>: <span class="text-green-400">"0xabcd..."</span>
+}</code></pre>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Manual Verification</h3>
+                <p class="text-gray-400 mb-4">You can verify proofs client-side using standard Merkle tree libraries:</p>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">import</span> { MerkleTree } <span class="text-purple-400">from</span> <span class="text-green-400">'merkletreejs'</span>;
+<span class="text-purple-400">import</span> { keccak256 } <span class="text-purple-400">from</span> <span class="text-green-400">'ethereum-cryptography/keccak'</span>;
+
+<span class="text-purple-400">const</span> leaf = <span class="text-cyan-400">keccak256</span>(contentHash);
+<span class="text-purple-400">const</span> verified = MerkleTree.<span class="text-cyan-400">verify</span>(
+  proof,
+  leaf,
+  merkleRoot
+);
+
+console.<span class="text-cyan-400">log</span>(<span class="text-green-400">'Verified:'</span>, verified);</code></pre>
+                </div>
+            </section>
+            
+            <!-- JavaScript SDK -->
+            <section id="javascript" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">JavaScript SDK</h2>
+                <p class="text-gray-400 mb-6">Use our official JavaScript client for Node.js and browsers.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">Installation</h3>
+                <div class="code-block p-4 mb-6">
+                    <pre class="font-mono text-sm"><code class="text-gray-300">npm install @indexnode/client</code></pre>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Usage</h3>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">import</span> { IndexNodeClient } <span class="text-purple-400">from</span> <span class="text-green-400">'@indexnode/client'</span>;
+
+<span class="text-purple-400">const</span> client = <span class="text-purple-400">new</span> <span class="text-blue-400">IndexNodeClient</span>({
+  apiKey: <span class="text-green-400">'your_api_key'</span>
+});
+
+<span class="text-gray-500">// Query events</span>
+<span class="text-purple-400">const</span> events = <span class="text-purple-400">await</span> client.<span class="text-cyan-400">query</span>({
+  blockchainEvents: {
+    contractAddress: <span class="text-green-400">'0x...'</span>,
+    limit: <span class="text-green-400">10</span>
+  }
+});
+
+<span class="text-gray-500">// Subscribe to new events</span>
+client.<span class="text-cyan-400">subscribe</span>({
+  blockchainEventAdded: {
+    contractAddress: <span class="text-green-400">'0x...'</span>
+  }
+}, (data) => {
+  console.<span class="text-cyan-400">log</span>(<span class="text-green-400">'New event:'</span>, data);
+});</code></pre>
+                </div>
+            </section>
+            
+            <!-- Python SDK -->
+            <section id="python" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Python SDK</h2>
+                <p class="text-gray-400 mb-6">Official Python client for IndexNode API.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">Installation</h3>
+                <div class="code-block p-4 mb-6">
+                    <pre class="font-mono text-sm"><code class="text-gray-300">pip install indexnode</code></pre>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Usage</h3>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">from</span> indexnode <span class="text-purple-400">import</span> IndexNodeClient
+
+<span class="text-gray-500"># Initialize client</span>
+client = IndexNodeClient(api_key=<span class="text-green-400">"your_api_key"</span>)
+
+<span class="text-gray-500"># Query events</span>
+events = client.query(<span class="text-green-400">"""
+    query {
+        blockchainEvents(limit: 10) {
+            id
+            contractAddress
+            eventName
+            blockNumber
+        }
+    }
+"""</span>)
+
+<span class="text-purple-400">for</span> event <span class="text-purple-400">in</span> events[<span class="text-green-400">'blockchainEvents'</span>]:
+    <span class="text-cyan-400">print</span>(<span class="text-green-400">f"Block: {event['blockNumber']}"</span>)
+
+<span class="text-gray-500"># Verify event</span>
+verification = client.verify_event(event_id=<span class="text-green-400">"evt_abc123"</span>)
+<span class="text-purple-400">if</span> verification[<span class="text-green-400">'isValid'</span>]:
+    <span class="text-cyan-400">print</span>(<span class="text-green-400">"Event verified on-chain!"</span>)
+
+<span class="text-gray-500"># Upload to IPFS</span>
+result = client.upload_to_ipfs(content=<span class="text-green-400">"event_data"</span>, pin=<span class="text-blue-400">True</span>)
+<span class="text-cyan-400">print</span>(<span class="text-green-400">f"CID: {result['cid']}"</span>)</code></pre>
+                </div>
+            </section>
+            
+            <!-- Rust SDK -->
+            <section id="rust" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Rust SDK</h2>
+                <p class="text-gray-400 mb-6">High-performance Rust client for IndexNode API.</p>
+                
+                <h3 class="text-xl font-semibold mb-4">Installation</h3>
+                <div class="code-block p-4 mb-6">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-gray-500"># Cargo.toml</span>
+[dependencies]
+indexnode = <span class="text-green-400">"0.1"</span>
+tokio = { version = <span class="text-green-400">"1"</span>, features = [<span class="text-green-400">"full"</span>] }</code></pre>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Usage</h3>
+                <div class="code-block p-4">
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">use</span> indexnode::IndexNodeClient;
+
+<span class="text-purple-400">#[tokio::main]</span>
+<span class="text-purple-400">async</span> <span class="text-purple-400">fn</span> <span class="text-cyan-400">main</span>() <span class="text-purple-400">-></span> <span class="text-blue-400">Result</span><<span class="text-blue-400">()</span>, <span class="text-blue-400">Box</span><<span class="text-purple-400">dyn</span> std::error::Error>> {
+    <span class="text-gray-500">// Initialize client</span>
+    <span class="text-purple-400">let</span> client = IndexNodeClient::<span class="text-cyan-400">new</span>(<span class="text-green-400">"your_api_key"</span>);
+    
+    <span class="text-gray-500">// Query events</span>
+    <span class="text-purple-400">let</span> events = client.<span class="text-cyan-400">query_events</span>(
+        <span class="text-blue-400">QueryParams</span> {
+            contract_address: <span class="text-blue-400">Some</span>(<span class="text-green-400">"0x..."</span>.<span class="text-cyan-400">to_string</span>()),
+            limit: <span class="text-blue-400">Some</span>(<span class="text-green-400">10</span>),
+            ..<span class="text-blue-400">Default</span>::<span class="text-cyan-400">default</span>()
+        }
+    ).<span class="text-purple-400">await</span>?;
+    
+    <span class="text-purple-400">for</span> event <span class="text-purple-400">in</span> events {
+        println!(<span class="text-green-400">"Block: {}"</span>, event.block_number);
+    }
+    
+    <span class="text-gray-500">// Verify event</span>
+    <span class="text-purple-400">let</span> proof = client.<span class="text-cyan-400">verify_event</span>(<span class="text-green-400">"evt_abc123"</span>).<span class="text-purple-400">await</span>?;
+    <span class="text-purple-400">if</span> proof.is_valid {
+        println!(<span class="text-green-400">"Event verified on-chain!"</span>);
+    }
+    
+    <span class="text-blue-400">Ok</span>(())
+}</code></pre>
+                </div>
+            </section>
+            
+            <!-- Code Examples -->
+            <section id="examples" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Code Examples</h2>
+                
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Track Uniswap Swaps</h3>
+                        <div class="code-block p-4">
+                            <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">const</span> swaps = <span class="text-purple-400">await</span> client.<span class="text-cyan-400">query</span>({
+  blockchainEvents: {
+    contractAddress: <span class="text-green-400">'0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640'</span>,
+    eventName: <span class="text-green-400">'Swap'</span>,
+    limit: <span class="text-green-400">100</span>
+  }
+});
+
+swaps.<span class="text-cyan-400">forEach</span>(swap => {
+  console.<span class="text-cyan-400">log</span>(<span class="text-green-400">`Block: ${<span class="text-gray-300">swap.blockNumber</span>}, Hash: ${<span class="text-gray-300">swap.transactionHash</span>}`</span>);
+});</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Verify Event Authenticity</h3>
+                        <div class="code-block p-4">
+                            <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">const</span> verification = <span class="text-purple-400">await</span> client.<span class="text-cyan-400">query</span>({
+  verifyMerkleProof: {
+    eventId: <span class="text-green-400">'evt_abc123'</span>
+  }
+});
+
+<span class="text-purple-400">if</span> (verification.isValid) {
+  console.<span class="text-cyan-400">log</span>(<span class="text-green-400">'Event verified on-chain!'</span>);
+  console.<span class="text-cyan-400">log</span>(<span class="text-green-400">`Block: ${<span class="text-gray-300">verification.blockNumber</span>}`</span>);
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Best Practices -->
+            <section id="best-practices" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Best Practices</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-3">Use Cursor-Based Pagination</h3>
+                        <p class="text-gray-400">For large datasets, use cursor-based pagination instead of offset to avoid missing records.</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-3">Cache Merkle Proofs</h3>
+                        <p class="text-gray-400">Store Merkle proofs locally to avoid repeated verification queries.</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-3">Use WebSocket for Real-Time Data</h3>
+                        <p class="text-gray-400">Subscribe to events via WebSocket instead of polling for better performance.</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-3">Rate Limiting</h3>
+                        <p class="text-gray-400">Implement exponential backoff when hitting rate limits (429 responses).</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- FAQ -->
+            <section id="faq" class="mb-16 scroll-mt-24">
+                <h2 class="text-3xl font-bold mb-6">Frequently Asked Questions</h2>
+                
+                <div class="space-y-4">
+                    <details class="bg-gray-900 border border-gray-800 rounded-lg p-6 group">
+                        <summary class="font-semibold cursor-pointer flex justify-between items-center">
+                            What blockchains are supported?
+                            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </summary>
+                        <p class="mt-4 text-gray-400 leading-relaxed">
+                            Currently Ethereum and Polygon. We're adding support for Arbitrum, Optimism, and Base in Q2 2026.
+                        </p>
+                    </details>
+                    
+                    <details class="bg-gray-900 border border-gray-800 rounded-lg p-6 group">
+                        <summary class="font-semibold cursor-pointer flex justify-between items-center">
+                            How long does verification take?
+                            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </summary>
+                        <p class="mt-4 text-gray-400 leading-relaxed">
+                            On-chain verification typically takes 2-5 minutes after event indexing, depending on blockchain confirmation times.
+                        </p>
+                    </details>
+                    
+                    <details class="bg-gray-900 border border-gray-800 rounded-lg p-6 group">
+                        <summary class="font-semibold cursor-pointer flex justify-between items-center">
+                            Can I index historical events?
+                            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </summary>
+                        <p class="mt-4 text-gray-400 leading-relaxed">
+                            Yes! Specify a startBlock when creating an indexing job to backfill historical data from any block.
+                        </p>
+                    </details>
+                    
+                    <details class="bg-gray-900 border border-gray-800 rounded-lg p-6 group">
+                        <summary class="font-semibold cursor-pointer flex justify-between items-center">
+                            What are rate limits?
+                            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </summary>
+                        <p class="mt-4 text-gray-400 leading-relaxed">
+                            Free tier: 100 requests/hour. Pro: 10,000 requests/hour. Enterprise: Custom limits. Rate limits reset hourly.
+                        </p>
+                    </details>
+                </div>
+            </section>
+            
+            <!-- Support -->
+            <section class="mb-16">
+                <div class="bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border border-cyan-600/20 rounded-lg p-8 text-center">
+                    <h2 class="text-2xl font-bold mb-4">Need Help?</h2>
+                    <p class="text-gray-400 mb-6">
+                        Our team is here to help you integrate IndexNode
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="https://github.com/ChronoCoders/indexnode" target="_blank" class="border border-gray-700 hover:border-cyan-600 px-6 py-3 rounded-md font-medium transition inline-flex items-center justify-center">
+                            GitHub
+                        </a>
+                        <a href="mailto:support@indexnode.io" class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition inline-flex items-center justify-center">
+                            Contact Support
+                        </a>
+                    </div>
+                </div>
+            </section>
+            
+        </main>
+        
+    </div>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
+                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
+                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Active Section Highlighter -->
+    <script>
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= (sectionTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    
+</body>
+</html>

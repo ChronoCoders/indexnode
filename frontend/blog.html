@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - IndexNode</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="IndexNode blog - Latest updates on blockchain indexing, Web3 infrastructure, and trustless data intelligence.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/tailwind.min.css">
+<style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .blog-card {
+            transition: all 0.3s ease;
+        }
+        .blog-card:hover {
+            transform: translateY(-4px);
+            border-color: #06b6d4;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                    <a href="use-cases.html" class="text-gray-400 hover:text-cyan-400 transition">Use Cases</a>
+                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                    <a href="blog.html" class="text-cyan-400 font-medium">Blog</a>
+                    <a href="login.html" class="text-gray-400 hover:text-cyan-400 transition">Login</a>
+                    <a href="dashboard.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero -->
+    <section class="pt-32 pb-16 bg-gradient-to-b from-gray-950 to-gray-900">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6">Blog</h1>
+                <p class="text-xl text-gray-400">
+                    Updates on blockchain indexing, Web3 infrastructure, and trustless data
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Blog Posts -->
+    <section class="py-24 bg-gray-950">
+        <div class="container mx-auto px-6">
+            <div class="max-w-5xl mx-auto">
+                
+                <!-- Featured Post -->
+                <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden mb-12 blog-card">
+                    <div class="p-8">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="bg-cyan-600/10 text-cyan-400 px-3 py-1 rounded-full text-sm font-medium">Featured</span>
+                            <span class="text-gray-500 text-sm">February 1, 2026</span>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">
+                            <a href="/blog/introducing-indexnode.html" class="hover:text-cyan-400 transition">Introducing IndexNode: Trustless Blockchain Intelligence</a>
+                        </h2>
+                        <p class="text-gray-400 text-lg leading-relaxed mb-6">
+                            Today, we're launching IndexNode to solve a critical problem in Web3 infrastructure: trustless data verification. Most blockchain indexing services require users to trust centralized providers. IndexNode changes this with on-chain timestamping and cryptographic Merkle proofs.
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Distributed Systems Labs</p>
+                                    <p class="text-sm text-gray-500">Engineering Team</p>
+                                </div>
+                            </div>
+                            <a href="/blog/introducing-indexnode.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+                
+                <!-- Blog Grid -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    
+                    <!-- Post 1 -->
+                    <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden blog-card flex flex-col">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-blue-600/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">Technical</span>
+                                <span class="text-gray-500 text-sm">January 28, 2026</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">
+                                <a href="/blog/merkle-trees-verification.html" class="hover:text-cyan-400 transition">How Merkle Trees Enable Trustless Data Verification</a>
+                            </h3>
+                            <p class="text-gray-400 leading-relaxed mb-4 flex-grow">
+                                Deep dive into how we use Merkle trees to provide cryptographic proof of data authenticity without requiring users to trust our infrastructure.
+                            </p>
+                            <a href="/blog/merkle-trees-verification.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center text-sm mt-auto">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <!-- Post 2 -->
+                    <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden blog-card flex flex-col">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-purple-600/10 text-purple-400 px-3 py-1 rounded-full text-sm font-medium">Use Case</span>
+                                <span class="text-gray-500 text-sm">January 25, 2026</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">
+                                <a href="/blog/defi-analytics-tutorial.html" class="hover:text-cyan-400 transition">Building Real-Time DeFi Analytics with IndexNode</a>
+                            </h3>
+                            <p class="text-gray-400 leading-relaxed mb-4 flex-grow">
+                                Learn how to build a production-ready DeFi analytics dashboard using IndexNode's GraphQL API and WebSocket subscriptions.
+                            </p>
+                            <a href="/blog/defi-analytics-tutorial.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center text-sm mt-auto">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <!-- Post 3 -->
+                    <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden blog-card flex flex-col">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-green-600/10 text-green-400 px-3 py-1 rounded-full text-sm font-medium">Product</span>
+                                <span class="text-gray-500 text-sm">January 20, 2026</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">
+                                <a href="/blog/ipfs-integration.html" class="hover:text-cyan-400 transition">IPFS Integration: Permanent Data Availability</a>
+                            </h3>
+                            <p class="text-gray-400 leading-relaxed mb-4 flex-grow">
+                                Announcing automatic IPFS backup for all indexed events on Pro and Enterprise plans. Your data is now permanently available on the decentralized web.
+                            </p>
+                            <a href="/blog/ipfs-integration.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center text-sm mt-auto">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <!-- Post 4 -->
+                    <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden blog-card flex flex-col">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-blue-600/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">Technical</span>
+                                <span class="text-gray-500 text-sm">January 15, 2026</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">
+                                <a href="/blog/why-rust.html" class="hover:text-cyan-400 transition">Why We Built IndexNode in Rust</a>
+                            </h3>
+                            <p class="text-gray-400 leading-relaxed mb-4 flex-grow">
+                                Our engineering philosophy and why we chose Rust, Axum, and DuckDB for production-grade blockchain infrastructure.
+                            </p>
+                            <a href="/blog/why-rust.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center text-sm mt-auto">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <!-- Post 5 -->
+                    <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden blog-card flex flex-col">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-purple-600/10 text-purple-400 px-3 py-1 rounded-full text-sm font-medium">Use Case</span>
+                                <span class="text-gray-500 text-sm">January 10, 2026</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">
+                                <a href="/blog/nft-provenance.html" class="hover:text-cyan-400 transition">NFT Provenance Tracking with Cryptographic Proof</a>
+                            </h3>
+                            <p class="text-gray-400 leading-relaxed mb-4 flex-grow">
+                                How NFT marketplaces can use IndexNode to provide verifiable ownership history and authenticity guarantees to buyers.
+                            </p>
+                            <a href="/blog/nft-provenance.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center text-sm mt-auto">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <!-- Post 6 -->
+                    <article class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden blog-card flex flex-col">
+                        <div class="p-6 flex flex-col flex-grow">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-green-600/10 text-green-400 px-3 py-1 rounded-full text-sm font-medium">Product</span>
+                                <span class="text-gray-500 text-sm">January 5, 2026</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-3">
+                                <a href="/blog/polygon-support.html" class="hover:text-cyan-400 transition">Polygon Support Now Live</a>
+                            </h3>
+                            <p class="text-gray-400 leading-relaxed mb-4 flex-grow">
+                                Index events from Polygon with the same cryptographic guarantees as Ethereum. Lower gas costs, same trustless verification.
+                            </p>
+                            <a href="/blog/polygon-support.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center text-sm mt-auto">
+                                Read more
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    
+                </div>
+                
+            </div>
+        </div>
+    </section>
+    
+    <!-- Newsletter -->
+    <section class="py-24 bg-gray-900/50 border-t border-gray-800">
+        <div class="container mx-auto px-6">
+            <div class="max-w-2xl mx-auto text-center">
+                <h2 class="text-3xl font-bold mb-4">Stay Updated</h2>
+                <p class="text-gray-400 mb-8">
+                    Get the latest updates on blockchain indexing and Web3 infrastructure
+                </p>
+                <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                    <input 
+                        type="email" 
+                        placeholder="Enter your email" 
+                        class="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
+                    >
+                    <button 
+                        type="submit" 
+                        class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition whitespace-nowrap"
+                    >
+                        Subscribe
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
+                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
+                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

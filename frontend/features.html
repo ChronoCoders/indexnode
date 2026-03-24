@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - IndexNode</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Explore IndexNode's features: on-chain timestamping, IPFS storage, GraphQL API, AI extraction, and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/tailwind.min.css">
+<style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            border-color: #06b6d4;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="features.html" class="text-cyan-400 font-medium">Features</a>
+                    <a href="use-cases.html" class="text-gray-400 hover:text-cyan-400 transition">Use Cases</a>
+                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                    <a href="blog.html" class="text-gray-400 hover:text-cyan-400 transition">Blog</a>
+                    <a href="login.html" class="text-gray-400 hover:text-cyan-400 transition">Login</a>
+                    <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero -->
+    <section class="pt-32 pb-16 bg-gradient-to-b from-gray-950 to-gray-900">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                    Enterprise-Grade Features
+                </h1>
+                <p class="text-xl text-gray-400 leading-relaxed">
+                    Everything you need to build trustless blockchain applications with verifiable data
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Main Features -->
+    <section class="py-24 bg-gray-950">
+        <div class="container mx-auto px-6">
+            
+            <!-- Feature 1: On-Chain Timestamping -->
+            <div id="timestamping" class="max-w-5xl mx-auto mb-24 scroll-mt-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="w-14 h-14 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">On-Chain Timestamping</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Every indexed event receives an immutable, cryptographically verifiable timestamp stored on Ethereum or Polygon. No trust required.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">SHA-256 content hashing for all indexed events</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Smart contract event emission on Ethereum and Polygon</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Verifiable block number and transaction hash for every timestamp</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">Timestamp Event</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-purple-400">event</span> <span class="text-blue-400">ContentHashed</span>(
+  <span class="text-cyan-400">bytes32</span> <span class="text-purple-400">indexed</span> contentHash,
+  <span class="text-cyan-400">uint256</span> blockNumber,
+  <span class="text-cyan-400">uint256</span> timestamp
+);
+
+<span class="text-gray-500">// Emitted on-chain</span>
+<span class="text-purple-400">emit</span> <span class="text-blue-400">ContentHashed</span>(
+  <span class="text-green-400">0x3d4f...</span>,
+  <span class="text-green-400">18524031</span>,
+  <span class="text-green-400">1706745600</span>
+);</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 2: IPFS Storage -->
+            <div id="ipfs" class="max-w-5xl mx-auto mb-24 scroll-mt-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 md:order-1 bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">IPFS Upload</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">UploadToIPFS</span> {
+  <span class="text-gray-300">uploadToIPFS</span>(
+    <span class="text-purple-400">content</span>: <span class="text-green-400">"event_data"</span>
+    <span class="text-purple-400">pin</span>: <span class="text-green-400">true</span>
+  ) {
+    <span class="text-gray-300">cid</span>
+    <span class="text-gray-300">url</span>
+    <span class="text-gray-300">gatewayUrl</span>
+    <span class="text-gray-300">pinnedAt</span>
+  }
+}</code></pre>
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <div class="w-14 h-14 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">IPFS Storage</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Decentralized, content-addressed storage with automatic pinning via Pinata. Your data lives permanently on the distributed web.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Automatic backup for all indexed events on Pro and Enterprise</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Content-addressed retrieval via CID</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">100GB storage on Pro tier, unlimited on Enterprise</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 3: GraphQL API -->
+            <div id="graphql" class="max-w-5xl mx-auto mb-24 scroll-mt-24">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="w-14 h-14 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">GraphQL API</h2>
+                        <p class="text-gray-400 text-lg mb-6 leading-relaxed">
+                            Type-safe, modern API with real-time WebSocket subscriptions. Query exactly the data you need, nothing more, nothing less.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">WebSocket subscriptions for real-time event streaming</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Cursor-based pagination for efficient data fetching</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-300">Type-safe schema with full introspection support</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                        <div class="text-sm text-gray-400 mb-3 font-mono">WebSocket Subscription</div>
+                        <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">subscription</span> <span class="text-blue-400">OnNewEvent</span> {
+  <span class="text-gray-300">blockchainEventAdded</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+  ) {
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">timestamp</span>
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+    
+    <!-- Additional Features Grid -->
+    <section class="py-24 bg-gray-900/50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Everything You Need</h2>
+                <p class="text-xl text-gray-400">Additional features for production-ready applications</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                
+                <!-- Feature: AI Extraction -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <path d="M12 2v4"></path>
+                            <path d="M12 18v4"></path>
+                            <path d="M4.93 4.93l2.83 2.83"></path>
+                            <path d="M16.24 16.24l2.83 2.83"></path>
+                            <path d="M2 12h4"></path>
+                            <path d="M18 12h4"></path>
+                            <path d="M4.93 19.07l2.83-2.83"></path>
+                            <path d="M16.24 7.76l2.83-2.83"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">AI Extraction</h3>
+                    <p class="text-gray-400">
+                        Claude API integration for intelligent data extraction from complex event parameters
+                    </p>
+                </div>
+                
+                <!-- Feature: Token Credits -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                            <path d="M12 18V6"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Token Credits</h3>
+                    <p class="text-gray-400">
+                        Pay-as-you-go credit system for flexible usage without long-term commitments
+                    </p>
+                </div>
+                
+                <!-- Feature: Distributed Workers -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Distributed Workers</h3>
+                    <p class="text-gray-400">
+                        Horizontally scalable indexing workers for high-throughput event processing
+                    </p>
+                </div>
+                
+                <!-- Feature: Chrome Headless -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="6"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Chrome Headless</h3>
+                    <p class="text-gray-400">
+                        Render JavaScript-heavy dApps for complete data extraction including client-side state
+                    </p>
+                </div>
+                
+                <!-- Feature: Data Marketplace -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Data Marketplace</h3>
+                    <p class="text-gray-400">
+                        Coming soon: monetize your indexed data by sharing with other developers
+                    </p>
+                </div>
+                
+                <!-- Feature: Enterprise Security -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Enterprise Security</h3>
+                    <p class="text-gray-400">
+                        SSO/SAML, role-based access control, audit logs, and dedicated infrastructure
+                    </p>
+                </div>
+                
+                <!-- Feature: Metrics & Monitoring -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Metrics & Monitoring</h3>
+                    <p class="text-gray-400">
+                        Real-time dashboards, alerting, and comprehensive API usage analytics
+                    </p>
+                </div>
+                
+                <!-- Feature: Multi-Chain -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Multi-Chain Support</h3>
+                    <p class="text-gray-400">
+                        Ethereum and Polygon now. Arbitrum, Optimism, and Base coming Q2 2026
+                    </p>
+                </div>
+                
+                <!-- Feature: Webhooks -->
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 feature-card">
+                    <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Webhooks</h3>
+                    <p class="text-gray-400">
+                        Push notifications to your endpoints when new events are indexed or verified
+                    </p>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA -->
+    <section class="py-24 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border-t border-gray-800">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-bold mb-6">
+                Ready to Start Building?
+            </h2>
+            <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                Get started with IndexNode today and bring cryptographic verification to your blockchain application
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
+                    Start Free Trial
+                </a>
+                <a href="docs.html" class="border border-gray-700 hover:border-cyan-600 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
+                    Read Documentation
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
+                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
+                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>
