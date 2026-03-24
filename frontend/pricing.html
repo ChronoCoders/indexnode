@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pricing - IndexNode</title>
     <link rel="icon" href="data:,">
-    <meta name="description" content="Simple, transparent pricing for blockchain indexing. Free tier, Pro at $99/month, and custom Enterprise plans.">
+    <meta name="description" content="Simple, transparent pricing for blockchain indexing. Start with free credits, top up with INC tokens, and scale with Enterprise.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +57,7 @@
                     Simple, Transparent Pricing
                 </h1>
                 <p class="text-xl text-gray-400 leading-relaxed">
-                    Start free, scale as you grow. No hidden fees, no surprises.
+                    Start with free credits. Deposit INC to scale. No subscriptions, no lock-in.
                 </p>
             </div>
         </div>
@@ -107,11 +107,11 @@
                 
                 <!-- Free Tier -->
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-8 pricing-card">
-                    <h3 class="text-2xl font-bold mb-2">Free</h3>
+                    <h3 class="text-2xl font-bold mb-2">Starter</h3>
                     <p class="text-gray-400 mb-6">Perfect for testing and small projects</p>
                     <div class="mb-6">
-                        <span class="text-5xl font-bold">$0</span>
-                        <span class="text-gray-400">/month</span>
+                        <span class="text-5xl font-bold">1,000</span>
+                        <span class="text-gray-400 block text-sm mt-1">free credits on signup</span>
                     </div>
                     <a href="signup.html" class="block w-full bg-gray-800 hover:bg-gray-700 text-center px-6 py-3 rounded-md font-medium transition mb-6">
                         Get Started
@@ -156,26 +156,32 @@
                     </ul>
                 </div>
                 
-                <!-- Pro Tier -->
+                <!-- Growth Tier -->
                 <div class="bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border-2 border-cyan-600 rounded-lg p-8 pricing-card relative">
                     <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
                         <span class="bg-cyan-600 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
                     </div>
-                    <h3 class="text-2xl font-bold mb-2">Pro</h3>
+                    <h3 class="text-2xl font-bold mb-2">Growth</h3>
                     <p class="text-gray-400 mb-6">For production applications</p>
                     <div class="mb-6">
-                        <span class="text-5xl font-bold">$99</span>
-                        <span class="text-gray-400">/month</span>
+                        <span class="text-5xl font-bold">Pay-as-you-go</span>
+                        <span class="text-gray-400 block text-sm mt-1">deposit INC, receive credits</span>
                     </div>
                     <a href="signup.html" class="block w-full bg-cyan-600 hover:bg-cyan-700 text-center px-6 py-3 rounded-md font-medium transition mb-6">
-                        Start Free Trial
+                        Deposit INC
                     </a>
                     <ul class="space-y-3">
                         <li class="flex items-start">
                             <svg class="w-5 h-5 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span class="text-gray-300">1,000,000 events/month</span>
+                            <span class="text-gray-300">1 INC = 1,000 credits</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-300">Credits never expire</span>
                         </li>
                         <li class="flex items-start">
                             <svg class="w-5 h-5 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,12 +211,6 @@
                             <svg class="w-5 h-5 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span class="text-gray-300">99.9% uptime SLA</span>
-                        </li>
-                        <li class="flex items-start">
-                            <svg class="w-5 h-5 text-cyan-400 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
                             <span class="text-gray-300">Custom webhooks</span>
                         </li>
                     </ul>
@@ -222,6 +222,7 @@
                     <p class="text-gray-400 mb-6">For large-scale operations</p>
                     <div class="mb-6">
                         <span class="text-5xl font-bold">Custom</span>
+                        <span class="text-gray-400 block text-sm mt-1">volume INC deposit rates</span>
                     </div>
                     <a href="mailto:hello@indexnode.io" class="block w-full bg-gray-800 hover:bg-gray-700 text-center px-6 py-3 rounded-md font-medium transition mb-6">
                         Contact Sales
@@ -287,17 +288,23 @@
                         <thead>
                             <tr class="border-b border-gray-800">
                                 <th class="text-left p-4 font-semibold">Feature</th>
-                                <th class="text-center p-4 font-semibold">Free</th>
-                                <th class="text-center p-4 font-semibold">Pro</th>
+                                <th class="text-center p-4 font-semibold">Starter</th>
+                                <th class="text-center p-4 font-semibold">Growth</th>
                                 <th class="text-center p-4 font-semibold">Enterprise</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-800">
                             <tr>
-                                <td class="p-4 text-gray-300">Events per month</td>
-                                <td class="p-4 text-center text-gray-400">10,000</td>
-                                <td class="p-4 text-center text-gray-400">1,000,000</td>
-                                <td class="p-4 text-center text-gray-400">Unlimited</td>
+                                <td class="p-4 text-gray-300">Credits included</td>
+                                <td class="p-4 text-center text-gray-400">1,000 free</td>
+                                <td class="p-4 text-center text-gray-400">Pay-as-you-go (INC)</td>
+                                <td class="p-4 text-center text-gray-400">Custom volume rate</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 text-gray-300">Events per credit</td>
+                                <td class="p-4 text-center text-gray-400">10</td>
+                                <td class="p-4 text-center text-gray-400">10</td>
+                                <td class="p-4 text-center text-gray-400">Custom</td>
                             </tr>
                             <tr>
                                 <td class="p-4 text-gray-300">On-chain timestamping</td>
@@ -378,37 +385,37 @@
                 
                 <div class="space-y-6">
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                        <h3 class="text-xl font-semibold mb-3">What happens if I exceed my plan limits?</h3>
+                        <h3 class="text-xl font-semibold mb-3">What happens when I run out of credits?</h3>
                         <p class="text-gray-400">
-                            We'll notify you when you reach 80% and 100% of your limit. You can upgrade your plan or purchase additional credits. We won't stop your service without notice.
+                            You'll receive a notification when your balance reaches 20% of your last deposit. New indexing jobs won't start with zero credits, but existing jobs will complete. Simply deposit more INC to top up immediately.
                         </p>
                     </div>
-                    
+
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                        <h3 class="text-xl font-semibold mb-3">Can I switch plans anytime?</h3>
+                        <h3 class="text-xl font-semibold mb-3">How do I get credits?</h3>
                         <p class="text-gray-400">
-                            Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately with prorated billing adjustments.
+                            Connect your wallet and deposit INC tokens. Credits are issued on-chain at a rate of 1 INC = 1,000 credits. Starter accounts receive 1,000 free credits on signup with no deposit required.
                         </p>
                     </div>
-                    
+
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                        <h3 class="text-xl font-semibold mb-3">What payment methods do you accept?</h3>
+                        <h3 class="text-xl font-semibold mb-3">Can I get my INC back?</h3>
                         <p class="text-gray-400">
-                            We accept all major credit cards via Stripe. Enterprise customers can pay via invoice with NET 30 terms.
+                            Yes. Unused credits can be withdrawn as INC at any time at the same rate they were deposited. Only credits spent on completed indexing jobs are burned — unspent credits are always yours.
                         </p>
                     </div>
-                    
+
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                        <h3 class="text-xl font-semibold mb-3">Is there a free trial for Pro?</h3>
+                        <h3 class="text-xl font-semibold mb-3">Do credits expire?</h3>
                         <p class="text-gray-400">
-                            Yes, we offer a 14-day free trial for the Pro plan with no credit card required. You get full access to all Pro features.
+                            No. Credits have no expiry date. Deposit once and use them whenever you need — there are no monthly fees or subscription charges.
                         </p>
                     </div>
-                    
+
                     <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                        <h3 class="text-xl font-semibold mb-3">What's your refund policy?</h3>
+                        <h3 class="text-xl font-semibold mb-3">Where can I get INC tokens?</h3>
                         <p class="text-gray-400">
-                            We offer a 30-day money-back guarantee for first-time Pro subscribers. No questions asked.
+                            INC is an ERC-20 token available on decentralized exchanges. Once acquired, connect your Web3 wallet in the dashboard to deposit and receive platform credits.
                         </p>
                     </div>
                 </div>
@@ -427,7 +434,7 @@
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
-                    Start Free Trial
+                    Get Free Credits
                 </a>
                 <a href="mailto:hello@indexnode.io" class="border border-gray-700 hover:border-cyan-600 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
                     Contact Sales
