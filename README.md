@@ -16,9 +16,9 @@ Trustless blockchain intelligence platform. Indexes blockchain events, crawls we
 Everything runs in a single binary (`indexnode-api`). The HTTP server and the job worker are concurrent components of the same process — the worker runs in a dedicated OS thread sharing the PostgreSQL connection pool with the API layer.
 
 ```
-┌─────────────────┐    GraphQL / REST    ┌────────────────────────────────────────┐
-│   Client / UI   │ ──────────────────► │              indexnode-api              │
-└─────────────────┘                      │                                        │
+┌─────────────────┐    GraphQL / REST    ┌───────────────────────────────────────┐
+│   Client / UI   │ ──────────────────►  │              indexnode-api            │
+└─────────────────┘                      │                                       │
                                          │  ┌──────────────┐  ┌────────────────┐ │
                                          │  │  HTTP layer  │  │  Worker thread │ │
                                          │  │              │  │                │ │
@@ -31,8 +31,8 @@ Everything runs in a single binary (`indexnode-api`). The HTTP server and the jo
                                          └─────────┼──────────────────┼──────────┘
                                                    │                  │
                                           ┌────────▼──────────────────▼────────┐
-                                          │            PostgreSQL               │
-                                          │  users · jobs · events · audit log  │
+                                          │            PostgreSQL              │
+                                          │  users · jobs · events · audit log │
                                           └────────────────────────────────────┘
                              ┌────────────────────┬─────────────────┐
                              ▼                    ▼                 ▼
