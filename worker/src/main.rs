@@ -1,7 +1,7 @@
-use indexnode_core::{JobQueue, Crawler, JobStatus};
+use indexnode_core::{hash_content, JobConfig, JobParams, JobQueue, Crawler, JobStatus};
 use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::time::Duration;
 use chrono::Utc;
 
@@ -34,23 +34,42 @@ async fn main() -> Result<()> {
             Ok(Some(job)) => {
                 tracing::info!("Processing job: {}", job.id);
 
-                let url = job.config["url"].as_str().unwrap_or("https://example.com");
-                let max_pages = job.config["max_pages"].as_u64().unwrap_or(100) as usize;
+                let config: JobConfig = match serde_json::from_value(job.config.clone()) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        tracing::error!("Job {} has malformed config, skipping: {:?}", job.id, e);
+                        queue.update_status(job.id, JobStatus::Failed, Some(format!("Malformed job config: {}", e))).await?;
+                        continue;
+                    }
+                };
+
+                let params = match config.params {
+                    JobParams::HttpCrawl(p) => p,
+                    _ => {
+                        tracing::error!("Job {} is not an HttpCrawl job, skipping", job.id);
+                        queue.update_status(job.id, JobStatus::Failed, Some("Wrong job type for this worker".to_string())).await?;
+                        continue;
+                    }
+                };
+
+                let url = params.url.as_str();
+                let max_pages = params.max_pages;
 
                 match crawler.crawl(url, max_pages).await {
                     Ok(links) => {
                         tracing::info!("Crawled {} links for job {}", links.len(), job.id);
 
                         for link in &links {
+                            let content_hash = hash_content(link.as_bytes());
                             let result = sqlx::query(
-                                "INSERT INTO crawl_results (id, job_id, url, status_code, content_hash, links, created_at) 
+                                "INSERT INTO crawl_results (id, job_id, url, status_code, content_hash, links, created_at)
                                  VALUES ($1, $2, $3, $4, $5, $6, $7)"
                             )
                             .bind(uuid::Uuid::new_v4())
                             .bind(job.id)
                             .bind(link)
-                            .bind(200)
-                            .bind("hash")
+                            .bind(200i32)
+                            .bind(&content_hash)
                             .bind(serde_json::json!([]))
                             .bind(Utc::now())
                             .execute(&pool)

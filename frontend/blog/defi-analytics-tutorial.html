@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Real-Time DeFi Analytics with IndexNode - IndexNode Blog</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="A step-by-step guide to building a production-ready DeFi analytics dashboard using IndexNode's GraphQL API and WebSocket subscriptions.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/tailwind.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .prose p { margin-bottom: 1.25rem; color: #9ca3af; line-height: 1.75; }
+        .prose h2 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 1rem; color: #f3f4f6; }
+        .prose h3 { font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #f3f4f6; }
+        .prose ul { list-style: disc; padding-left: 1.5rem; color: #9ca3af; margin-bottom: 1.25rem; }
+        .prose ul li { margin-bottom: 0.5rem; }
+        .prose code { font-family: 'JetBrains Mono', monospace; background: #1f2937; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.875rem; color: #67e8f9; }
+        .code-block { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold tracking-tight">IndexNode</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="../features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                <a href="../pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                <a href="../docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                <a href="../blog.html" class="text-cyan-400 font-medium">Blog</a>
+                <a href="../signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="pt-32 pb-24">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto">
+
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-purple-600/10 text-purple-400 px-3 py-1 rounded-full text-sm font-medium">Use Case</span>
+                    <span class="text-gray-500 text-sm">January 25, 2026</span>
+                    <span class="text-gray-500 text-sm">·</span>
+                    <span class="text-gray-500 text-sm">12 min read</span>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                    Building Real-Time DeFi Analytics with IndexNode
+                </h1>
+
+                <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                    A step-by-step walkthrough of building a production DeFi analytics dashboard — live swap volume, liquidity depth, and fee accrual — backed by cryptographically verified on-chain data.
+                </p>
+
+                <div class="border-t border-gray-800 mb-8 pt-8 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <p class="font-medium">Distributed Systems Labs</p>
+                        <p class="text-sm text-gray-500">Engineering Team</p>
+                    </div>
+                </div>
+
+                <div class="prose">
+                    <h2>What We're Building</h2>
+                    <p>
+                        DeFi protocols emit a rich stream of on-chain events: swaps, liquidity additions and removals, fee claims. This tutorial shows how to index those events with IndexNode and serve them to a frontend dashboard with sub-second latency via WebSocket subscriptions.
+                    </p>
+                    <p>
+                        The stack: IndexNode GraphQL API for historical queries, WebSocket subscription for live events, and a lightweight frontend that aggregates volume and fee data. All event data is Merkle-verified before display.
+                    </p>
+
+                    <h2>Step 1 — Create a Blockchain Indexing Job</h2>
+                    <p>
+                        Start by authenticating and creating an indexing job for the contract you want to track. Use the <code>createBlockchainJob</code> mutation:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">mutation</span> {
+  <span style="color:#67e8f9">createBlockchainJob</span>(input: {
+    contractAddress: <span style="color:#86efac">"0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"</span>,
+    chain: <span style="color:#86efac">"ethereum"</span>,
+    events: [<span style="color:#86efac">"Swap"</span>, <span style="color:#86efac">"Mint"</span>, <span style="color:#86efac">"Burn"</span>],
+    fromBlock: <span style="color:#86efac">21000000</span>
+  }) {
+    id
+    status
+  }
+}</pre>
+                    </div>
+                    <p>
+                        The job will enter the queue and begin processing. Depending on how far back <code>fromBlock</code> is, backfill may take several minutes. You can poll the <code>job(id)</code> query to check status.
+                    </p>
+
+                    <h2>Step 2 — Query Historical Events</h2>
+                    <p>
+                        Once indexing completes, query the accumulated events to build your baseline metrics:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">query</span> {
+  <span style="color:#67e8f9">blockchainEvents</span>(
+    contractAddress: <span style="color:#86efac">"0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"</span>,
+    limit: <span style="color:#86efac">100</span>
+  ) {
+    id
+    eventName
+    blockNumber
+    transactionHash
+    eventData
+    contentHash
+  }
+}</pre>
+                    </div>
+                    <p>
+                        The <code>eventData</code> field contains the decoded event parameters as JSON — for a Uniswap V3 <code>Swap</code>, this includes <code>amount0</code>, <code>amount1</code>, <code>sqrtPriceX96</code>, and <code>liquidity</code>. Use these to compute cumulative volume and current price.
+                    </p>
+
+                    <h2>Step 3 — Subscribe to Live Events</h2>
+                    <p>
+                        IndexNode pushes new indexed events over a WebSocket subscription. Connect with any GraphQL WebSocket client:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">subscription</span> {
+  <span style="color:#67e8f9">blockchainEvents</span>(
+    contractAddress: <span style="color:#86efac">"0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"</span>
+  ) {
+    id
+    eventName
+    blockNumber
+    eventData
+    contentHash
+  }
+}</pre>
+                    </div>
+                    <p>
+                        Each incoming event arrives within one block of being mined. Your frontend can increment running totals without polling — the subscription sends a message only when there's new data.
+                    </p>
+
+                    <h2>Step 4 — Verify Events Client-Side</h2>
+                    <p>
+                        Before displaying any value, verify the event's <code>contentHash</code> against the on-chain commitment. A minimal verification call:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">query</span> {
+  <span style="color:#67e8f9">verifyHash</span>(contentHash: <span style="color:#86efac">"0x9f3a..."</span>) {
+    verified
+    blockNumber
+    transactionHash
+  }
+}</pre>
+                    </div>
+                    <p>
+                        For high-throughput dashboards, batch verification client-side by checking the Merkle root directly against the on-chain <code>TimestampRegistry</code> contract rather than making per-event API calls.
+                    </p>
+
+                    <h2>Aggregating Volume and Fees</h2>
+                    <p>
+                        Uniswap V3 swap events encode amounts as signed integers (<code>amount0</code> and <code>amount1</code>) where a negative value indicates outflow and positive indicates inflow. To compute 24-hour volume, filter events by block range and sum the absolute value of token amounts across all swaps in that window.
+                    </p>
+                    <p>
+                        Fee accrual can be derived from the pool's fee tier (stored in the contract) multiplied by the swap volume. For pools with dynamic fees, the fee is encoded directly in each <code>Swap</code> event's <code>eventData</code>.
+                    </p>
+
+                    <h2>Production Considerations</h2>
+                    <ul>
+                        <li>Cache verified event batches in your own database — don't re-fetch what you've already validated</li>
+                        <li>Handle WebSocket reconnections gracefully by re-querying the last known block on reconnect</li>
+                        <li>Store the on-chain Merkle root alongside your cached data so you can re-verify offline</li>
+                        <li>Monitor credit balance via the <code>creditBalance</code> query and top up before jobs fail mid-run</li>
+                    </ul>
+                </div>
+
+                <div class="border-t border-gray-800 mt-12 pt-8">
+                    <a href="../blog.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Blog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

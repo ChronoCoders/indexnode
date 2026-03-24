@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Merkle Trees Enable Trustless Data Verification - IndexNode Blog</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="A deep dive into how IndexNode uses Merkle trees to provide cryptographic proof of data authenticity without requiring users to trust a centralized provider.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/tailwind.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .prose p { margin-bottom: 1.25rem; color: #9ca3af; line-height: 1.75; }
+        .prose h2 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 1rem; color: #f3f4f6; }
+        .prose h3 { font-size: 1.2rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #f3f4f6; }
+        .prose ul { list-style: disc; padding-left: 1.5rem; color: #9ca3af; margin-bottom: 1.25rem; }
+        .prose ul li { margin-bottom: 0.5rem; }
+        .prose code { font-family: 'JetBrains Mono', monospace; background: #1f2937; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.875rem; color: #67e8f9; }
+        .code-block { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+        .code-block pre { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold tracking-tight">IndexNode</a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="../features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                <a href="../pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                <a href="../docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                <a href="../blog.html" class="text-cyan-400 font-medium">Blog</a>
+                <a href="../signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md font-medium transition">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="pt-32 pb-24">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto">
+
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="bg-blue-600/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">Technical</span>
+                    <span class="text-gray-500 text-sm">January 28, 2026</span>
+                    <span class="text-gray-500 text-sm">·</span>
+                    <span class="text-gray-500 text-sm">8 min read</span>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                    How Merkle Trees Enable Trustless Data Verification
+                </h1>
+
+                <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                    Most blockchain indexing services ask you to trust that the data they return is accurate. IndexNode doesn't. Here's how Merkle trees let you verify any indexed event independently — without running your own node.
+                </p>
+
+                <div class="border-t border-gray-800 mb-8 pt-8 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <p class="font-medium">Distributed Systems Labs</p>
+                        <p class="text-sm text-gray-500">Engineering Team</p>
+                    </div>
+                </div>
+
+                <div class="prose">
+                    <h2>The Trust Problem in Blockchain Indexing</h2>
+                    <p>
+                        When you query a blockchain indexer for historical events — say, every <code>Transfer</code> emitted by a token contract — you're trusting that the service returned every event, in the correct order, with accurate parameters. That trust is implicit and unverifiable.
+                    </p>
+                    <p>
+                        For DeFi protocols, compliance tools, and audit applications, this is unacceptable. A missing event or a tampered parameter can silently corrupt downstream calculations. The fix isn't better contracts with your data provider — it's cryptographic proof.
+                    </p>
+
+                    <h2>What Is a Merkle Tree?</h2>
+                    <p>
+                        A Merkle tree is a binary tree where every leaf node is a hash of a data block, and every non-leaf node is a hash of its two children. The single value at the top — the Merkle root — is a compact fingerprint of the entire dataset.
+                    </p>
+                    <p>
+                        Changing any leaf changes every hash on the path from that leaf to the root. This makes it computationally impossible to tamper with any element without invalidating the root — a property that makes Merkle trees the backbone of Bitcoin's transaction proofs, Ethereum's state trie, and Git's object store.
+                    </p>
+
+                    <h2>How IndexNode Uses Merkle Trees</h2>
+                    <p>
+                        Every time IndexNode processes a batch of blockchain events, it builds a Merkle tree over the batch. The root hash is then committed on-chain via the <code>TimestampRegistry</code> contract, making it immutable and publicly auditable.
+                    </p>
+                    <p>
+                        The process is as follows:
+                    </p>
+                    <ul>
+                        <li>Each event's content is hashed with SHA-256: <code>hash_content(event_bytes)</code></li>
+                        <li>These hashes form the leaf nodes of the tree</li>
+                        <li>The tree is built bottom-up, hashing pairs until a single root remains</li>
+                        <li>The root is submitted as an on-chain transaction, timestamped to the block</li>
+                    </ul>
+
+                    <h2>Verifying an Event Without Trusting IndexNode</h2>
+                    <p>
+                        When you receive an event from the API, you also receive its Merkle proof — an ordered list of sibling hashes along the path from the leaf to the root. To verify the event:
+                    </p>
+                    <ol style="list-style: decimal; padding-left: 1.5rem; color: #9ca3af; margin-bottom: 1.25rem;">
+                        <li style="margin-bottom: 0.5rem;">Hash the event data yourself to get the leaf hash</li>
+                        <li style="margin-bottom: 0.5rem;">Walk up the proof, hashing each sibling in sequence</li>
+                        <li style="margin-bottom: 0.5rem;">Compare the resulting root against the on-chain commitment</li>
+                    </ol>
+                    <p>
+                        If they match, the event is authentic. If they don't, the data has been tampered with. This verification requires no special infrastructure — just a SHA-256 implementation and a read call to a public RPC.
+                    </p>
+
+                    <h2>The IndexNode Verification API</h2>
+                    <p>
+                        You can verify any event programmatically using the GraphQL API:
+                    </p>
+                    <div class="code-block">
+<pre><span style="color:#c084fc">query</span> {
+  <span style="color:#67e8f9">verifyHash</span>(
+    contentHash: <span style="color:#86efac">"0x9f3a8c2d..."</span>
+  ) {
+    verified
+    blockNumber
+    transactionHash
+  }
+}</pre>
+                    </div>
+                    <p>
+                        A <code>verified: true</code> response means the hash was committed on-chain by IndexNode's timestamp contract. You can independently confirm this by reading the contract state on any Ethereum RPC — no dependency on our API.
+                    </p>
+
+                    <h2>Odd-Length Batches and Edge Cases</h2>
+                    <p>
+                        Merkle trees require an even number of leaf nodes to pair correctly. When a batch has an odd number of events, the last leaf is duplicated before building the parent level. This is a standard convention — the same approach used in Bitcoin's transaction Merkle tree — and it's handled transparently in IndexNode's <code>generate_merkle_proof</code> and <code>verify_merkle_proof</code> implementations.
+                    </p>
+                    <p>
+                        The proof verification algorithm accounts for this by tracking the current level size and index parity at each step, ensuring the correct leaf (left or right child) is reconstructed throughout the walk.
+                    </p>
+
+                    <h2>Why This Matters for Production Applications</h2>
+                    <p>
+                        For most read-heavy applications, the performance cost of verification is negligible — a few microseconds of hashing per event. The security benefit is concrete: your application can detect data tampering, prove data authenticity to regulators or auditors, and operate without a trusted intermediary.
+                    </p>
+                    <p>
+                        This is the difference between an indexing service and trustless blockchain intelligence.
+                    </p>
+                </div>
+
+                <div class="border-t border-gray-800 mt-12 pt-8">
+                    <a href="../blog.html" class="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Blog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
