@@ -34,12 +34,12 @@ Everything runs in a single binary (`indexnode-api`). The HTTP server and the jo
                                           │            PostgreSQL              │
                                           │  users · jobs · events · audit log │
                                           └────────────────────────────────────┘
-                             ┌────────────────────┬─────────────────┐
-                             ▼                    ▼                 ▼
-                       Ethereum RPC           IPFS node       Anthropic API
-                   (CreditManager,        (event storage,    (AI extraction)
-                    MarketplaceClient,      content pin)
-                    BlockchainClient)
+                                         ┌────────────────────┬─────────────────┐
+                                         ▼                    ▼                 ▼
+                                    Ethereum RPC           IPFS node       Anthropic API
+                                 (CreditManager,        (event storage,    (AI extraction)
+                                            MarketplaceClient,      content pin)
+                                                       BlockchainClient)
 ```
 
 > Both the HTTP layer and the worker thread connect to Ethereum RPC — the HTTP layer for credit and marketplace contract calls, the worker for blockchain event indexing.
