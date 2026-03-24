@@ -16,10 +16,10 @@ Trustless blockchain intelligence platform. Indexes blockchain events, crawls we
 ```
 ┌─────────────────┐     GraphQL / REST      ┌──────────────────┐
 │   Client / UI   │ ──────────────────────► │   indexnode-api  │
-└─────────────────┘                          └────────┬─────────┘
+└─────────────────┘                          └────────┬────────┘
                                                       │ PostgreSQL job queue
                                              ┌────────▼─────────┐
-                                             │ indexnode-worker  │
+                                             │ indexnode-worker │
                                              └────────┬─────────┘
                                     ┌─────────────────┼─────────────────┐
                                     ▼                 ▼                 ▼
