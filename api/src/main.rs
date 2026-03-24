@@ -86,15 +86,19 @@ async fn main() -> Result<()> {
 
     // credit_private_key goes out of scope here (dropped and zeroed).
 
-    let anthropic_api_key =
-        env::var("ANTHROPIC_API_KEY").context("ANTHROPIC_API_KEY must be set")?;
-    let _ai_extractor = AIExtractor::new(anthropic_api_key.clone())?;
+    let ai_extractor_worker = env::var("ANTHROPIC_API_KEY")
+        .ok()
+        .map(AIExtractor::new)
+        .transpose()?;
+
+    if ai_extractor_worker.is_none() {
+        tracing::warn!("ANTHROPIC_API_KEY not set — AI extraction disabled");
+    }
 
     // Shutdown signal shared between the server and the worker thread.
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 
     let worker_pool = pool.clone();
-    let ai_extractor_worker = AIExtractor::new(anthropic_api_key)?;
     let worker_shutdown_rx = shutdown_rx.clone();
 
     std::thread::spawn(move || {
@@ -159,6 +163,7 @@ async fn main() -> Result<()> {
         ))
         .route_layer(per_user_limiter)
         .route_layer(axum::middleware::from_fn(middleware::require_auth))
+        .merge(routes::create_public_routes(pool.clone()))
         .route(
             "/graphql/ws",
             axum::routing::any_service(GraphQLSubscription::new(schema.clone())),
@@ -183,7 +188,7 @@ async fn main() -> Result<()> {
     if env::var("SERVE_FRONTEND").as_deref() == Ok("true") {
         let serve_dir = ServeDir::new("./frontend")
             .not_found_service(ServeFile::new("./frontend/index.html"));
-        app = app.nest_service("/", serve_dir);
+        app = app.fallback_service(serve_dir);
         tracing::info!("Serving frontend from ./frontend");
     }
 
@@ -211,7 +216,7 @@ async fn main() -> Result<()> {
     tracing::info!("Worker running in background");
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    serve(listener, app)
+    serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(async move {
             tokio::signal::ctrl_c()
                 .await
@@ -307,7 +312,7 @@ async fn get_queue_depth(pool: &sqlx::PgPool) -> Result<i64> {
 async fn run_worker(
     pool: sqlx::PgPool,
     credit_manager: CreditManager,
-    ai: AIExtractor,
+    ai: Option<AIExtractor>,
     mut shutdown: tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
     let queue = JobQueue::new(pool.clone());
@@ -462,7 +467,7 @@ async fn run_worker(
                             &blockchain_client,
                             &ipfs_storage,
                             &credit_manager,
-                            &ai,
+                            ai.as_ref(),
                             &pool,
                             &job,
                             ai_timeout,
@@ -514,7 +519,7 @@ async fn process_blockchain_index(
     client: &BlockchainClient,
     ipfs: &IpfsStorage,
     credit_manager: &CreditManager,
-    ai: &AIExtractor,
+    ai: Option<&AIExtractor>,
     pool: &sqlx::PgPool,
     job: &Job,
     ai_timeout: Duration,
@@ -634,7 +639,7 @@ async fn process_blockchain_index(
                 .await
                 .unwrap_or(None);
 
-            if let Some(schema) = extraction_schema {
+            if let (Some(schema), Some(ai)) = (extraction_schema, ai) {
                 let schema_str = serde_json::to_string(&schema)?;
                 let event_str = serde_json::to_string(&event.event_data)?;
 
