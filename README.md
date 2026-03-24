@@ -13,40 +13,57 @@ Trustless blockchain intelligence platform. Indexes blockchain events, crawls we
 
 ## Architecture
 
+Everything runs in a single binary (`indexnode-api`). The HTTP server and the job worker are concurrent components of the same process — the worker runs in a dedicated OS thread sharing the PostgreSQL connection pool with the API layer.
+
 ```
-┌─────────────────┐     GraphQL / REST      ┌──────────────────┐
-│   Client / UI   │ ──────────────────────► │   indexnode-api  │
-└─────────────────┘                          └────────┬────────┘
-                                                      │ PostgreSQL job queue
-                                             ┌────────▼─────────┐
-                                             │ indexnode-worker │
-                                             └────────┬─────────┘
-                                    ┌─────────────────┼─────────────────┐
-                                    ▼                 ▼                 ▼
-                              Ethereum RPC         IPFS node      Anthropic API
+┌─────────────────┐    GraphQL / REST    ┌────────────────────────────────────────┐
+│   Client / UI   │ ──────────────────► │              indexnode-api              │
+└─────────────────┘                      │                                        │
+                                         │  ┌──────────────┐  ┌────────────────┐ │
+                                         │  │  HTTP layer  │  │  Worker thread │ │
+                                         │  │              │  │                │ │
+                                         │  │ GraphQL API  │  │ Crawl jobs     │ │
+                                         │  │ Auth / RBAC  │  │ Blockchain idx │ │
+                                         │  │ Rate limiter │  │ AI extraction  │ │
+                                         │  │ Credit check │  │ IPFS upload    │ │
+                                         │  └──────┬───────┘  └───────┬────────┘ │
+                                         │         │  shared PG pool  │          │
+                                         └─────────┼──────────────────┼──────────┘
+                                                   │                  │
+                                          ┌────────▼──────────────────▼────────┐
+                                          │            PostgreSQL               │
+                                          │  users · jobs · events · audit log  │
+                                          └────────────────────────────────────┘
+                             ┌────────────────────┬─────────────────┐
+                             ▼                    ▼                 ▼
+                       Ethereum RPC           IPFS node       Anthropic API
+                   (CreditManager,        (event storage,    (AI extraction)
+                    MarketplaceClient,      content pin)
+                    BlockchainClient)
 ```
+
+> Both the HTTP layer and the worker thread connect to Ethereum RPC — the HTTP layer for credit and marketplace contract calls, the worker for blockchain event indexing.
 
 **Crates**
 
 | Crate | Description |
 |---|---|
 | `indexnode-core` | Crawler, blockchain client, IPFS, marketplace, Merkle, job queue |
-| `indexnode-api` | Axum HTTP server, GraphQL schema, auth, middleware |
+| `indexnode-api` | Axum HTTP server, GraphQL schema, auth, middleware, embedded worker |
 
 **Infrastructure**
 
 | Service | Role |
 |---|---|
 | PostgreSQL | Primary store — jobs, events, crawl results, users, audit log |
-| Redis | Rate limiter state, distributed worker coordination |
-| IPFS | Content-addressed dataset storage |
-| Ethereum RPC | Event indexing and on-chain hash commits |
+| IPFS | Content-addressed storage for indexed event data |
+| Ethereum RPC | Credit/marketplace contract calls and blockchain event indexing |
+| Anthropic API | AI-powered structured data extraction from indexed events |
 
 ## Prerequisites
 
 - Rust 1.75+
 - PostgreSQL 15+
-- Redis 7+
 - An Ethereum RPC endpoint (e.g. Alchemy, Infura, or local node)
 - An IPFS node (local or Infura IPFS)
 - Anthropic API key (for AI extraction)
