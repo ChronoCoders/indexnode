@@ -60,10 +60,10 @@ pub fn verify_merkle_proof(
 
     for sibling in proof {
         // Pad odd levels to match how generate_merkle_proof duplicates the last node.
-        if level_size % 2 != 0 {
+        if !level_size.is_multiple_of(2) {
             level_size += 1;
         }
-        let combined = if current_index % 2 == 0 {
+        let combined = if current_index.is_multiple_of(2) {
             // Current node is the left child; sibling is on the right.
             format!("{}{}", current_hash, sibling)
         } else {
@@ -104,9 +104,21 @@ mod tests {
         let root = hash_content(format!("{}{}", l12, l34).as_bytes());
 
         let proof = generate_merkle_proof(&leaves, 0);
-        assert!(verify_merkle_proof(&leaves[0], &proof, &root, 0, leaves.len()));
+        assert!(verify_merkle_proof(
+            &leaves[0],
+            &proof,
+            &root,
+            0,
+            leaves.len()
+        ));
 
         let proof2 = generate_merkle_proof(&leaves, 2);
-        assert!(verify_merkle_proof(&leaves[2], &proof2, &root, 2, leaves.len()));
+        assert!(verify_merkle_proof(
+            &leaves[2],
+            &proof2,
+            &root,
+            2,
+            leaves.len()
+        ));
     }
 }

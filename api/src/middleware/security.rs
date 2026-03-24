@@ -29,10 +29,7 @@ pub async fn validate_request_security(req: Request, next: Next) -> Result<Respo
         header::X_CONTENT_TYPE_OPTIONS,
         HeaderValue::from_static("nosniff"),
     );
-    headers.insert(
-        header::X_FRAME_OPTIONS,
-        HeaderValue::from_static("DENY"),
-    );
+    headers.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
     headers.insert(
         header::REFERRER_POLICY,
         HeaderValue::from_static("strict-origin-when-cross-origin"),
@@ -42,10 +39,7 @@ pub async fn validate_request_security(req: Request, next: Next) -> Result<Respo
         HeaderValue::from_static("default-src 'self'"),
     );
     // Prevent browsers from caching sensitive API responses
-    headers.insert(
-        header::CACHE_CONTROL,
-        HeaderValue::from_static("no-store"),
-    );
+    headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
 
     Ok(response)
 }

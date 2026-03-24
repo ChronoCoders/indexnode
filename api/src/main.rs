@@ -134,8 +134,8 @@ async fn main() -> Result<()> {
 
     let schema = graphql::build_schema(pool.clone(), credit_manager, marketplace);
 
-    let allowed_origin = env::var("ALLOWED_ORIGIN")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let allowed_origin =
+        env::var("ALLOWED_ORIGIN").unwrap_or_else(|_| "http://localhost:3000".to_string());
     let cors = CorsLayer::new()
         .allow_origin(
             allowed_origin
@@ -186,8 +186,8 @@ async fn main() -> Result<()> {
     // Optionally serve the frontend from the same process. In production,
     // prefer serving static assets from a CDN or dedicated static file server.
     if env::var("SERVE_FRONTEND").as_deref() == Ok("true") {
-        let serve_dir = ServeDir::new("./frontend")
-            .not_found_service(ServeFile::new("./frontend/index.html"));
+        let serve_dir =
+            ServeDir::new("./frontend").not_found_service(ServeFile::new("./frontend/index.html"));
         app = app.fallback_service(serve_dir);
         tracing::info!("Serving frontend from ./frontend");
     }
@@ -216,15 +216,18 @@ async fn main() -> Result<()> {
     tracing::info!("Worker running in background");
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(async move {
-            tokio::signal::ctrl_c()
-                .await
-                .expect("Failed to install CTRL+C handler");
-            tracing::info!("Shutdown signal received, stopping server and worker");
-            let _ = shutdown_tx.send(true);
-        })
-        .await?;
+    serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(async move {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Failed to install CTRL+C handler");
+        tracing::info!("Shutdown signal received, stopping server and worker");
+        let _ = shutdown_tx.send(true);
+    })
+    .await?;
 
     Ok(())
 }
@@ -252,9 +255,7 @@ async fn run_distributed_worker(redis_url: String, _pool: sqlx::PgPool) -> Resul
         }
     });
 
-    worker
-        .run(|_job| async move { Ok(()) })
-        .await?;
+    worker.run(|_job| async move { Ok(()) }).await?;
 
     Ok(())
 }
@@ -359,15 +360,17 @@ async fn run_worker(
                         let url = p.url.as_str();
                         let max_pages = p.max_pages;
 
-                        let crawl_result = tokio::time::timeout(
-                            crawl_timeout,
-                            crawler.crawl(url, max_pages),
-                        )
-                        .await;
+                        let crawl_result =
+                            tokio::time::timeout(crawl_timeout, crawler.crawl(url, max_pages))
+                                .await;
 
                         match crawl_result {
                             Err(_) => {
-                                tracing::error!("Job {} timed out after {:?}", job.id, crawl_timeout);
+                                tracing::error!(
+                                    "Job {} timed out after {:?}",
+                                    job.id,
+                                    crawl_timeout
+                                );
                                 queue
                                     .update_status(
                                         job.id,
@@ -400,7 +403,8 @@ async fn run_worker(
                                         {
                                             tracing::error!(
                                                 "Failed to spend on-chain credits for job {}: {:?}",
-                                                job.id, e
+                                                job.id,
+                                                e
                                             );
                                         }
                                         if let Err(e) = sqlx::query(
@@ -439,7 +443,8 @@ async fn run_worker(
                                     if let Err(e) = query_builder.build().execute(&pool).await {
                                         tracing::error!(
                                             "Failed to insert crawl results for job {}: {:?}",
-                                            job.id, e
+                                            job.id,
+                                            e
                                         );
                                     }
                                 }
@@ -524,8 +529,8 @@ async fn process_blockchain_index(
     job: &Job,
     ai_timeout: Duration,
 ) -> Result<()> {
-    let config: JobConfig = serde_json::from_value(job.config.clone())
-        .context("Failed to parse job config")?;
+    let config: JobConfig =
+        serde_json::from_value(job.config.clone()).context("Failed to parse job config")?;
     let params = match config.params {
         JobParams::BlockchainIndex(p) => p,
         _ => anyhow::bail!("Expected BlockchainIndex params for this job"),
@@ -546,7 +551,8 @@ async fn process_blockchain_index(
             {
                 tracing::error!(
                     "Failed to spend on-chain credits for job {}: {:?}",
-                    job.id, e
+                    job.id,
+                    e
                 );
             }
             if let Err(e) = sqlx::query(
@@ -573,9 +579,7 @@ async fn process_blockchain_index(
             .cloned()
             .context("No events specified")?,
         from_block: params.from_block,
-        to_block: params
-            .to_block
-            .unwrap_or(client.get_latest_block().await?),
+        to_block: params.to_block.unwrap_or(client.get_latest_block().await?),
     };
 
     let events = client.get_events(filter).await?;
