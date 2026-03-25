@@ -610,7 +610,7 @@ impl Mutation {
         let price_credits: i64 = row.get("price_credits");
         let on_chain_id = U256::from(
             row.get::<Option<i64>, _>("on_chain_listing_id")
-                .unwrap_or(0),
+                .ok_or_else(|| Error::new("Listing is not available for on-chain purchase: missing on_chain_listing_id"))?,
         );
 
         let tx_hash = marketplace.purchase_dataset(on_chain_id).await?;
