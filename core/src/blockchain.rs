@@ -127,6 +127,7 @@ mod tests {
                 .await
                 .expect("Failed to get latest block in test");
             let filter = EventFilter {
+                chain: "ethereum".to_string(),
                 contract_address: address,
                 event_signature: "Transfer(address,address,uint256)".to_string(),
                 from_block: latest - 100,
