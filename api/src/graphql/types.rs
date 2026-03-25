@@ -61,17 +61,14 @@ pub struct CreateBlockchainJobInput {
     pub from_block: i64,
     /// Optional ending block number for indexing.
     pub to_block: Option<i64>,
-}
-
-/// Result of a content hash verification against the blockchain.
-#[derive(SimpleObject)]
-pub struct VerificationResult {
-    /// Whether the hash has been verified on-chain.
-    pub verified: bool,
-    /// The block number where the hash was committed, if verified.
-    pub block_number: Option<i64>,
-    /// The transaction hash of the commitment, if verified.
-    pub transaction_hash: Option<String>,
+    /// Enable AI extraction on each indexed event. Requires extraction_schema.
+    pub enable_ai_extraction: Option<bool>,
+    /// JSON schema (as a string) describing the structure to extract from event data.
+    /// Required when enable_ai_extraction is true.
+    pub extraction_schema: Option<String>,
+    /// Maximum total tokens (input + output) the AI extractor may use across
+    /// all events in this job. Defaults to 100,000. Capped at 1,000,000.
+    pub ai_token_budget: Option<i32>,
 }
 
 /// Represents an AI-powered extraction from a blockchain event.

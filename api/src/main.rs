@@ -8,8 +8,8 @@ use chrono::Utc;
 use ethers::types::Address;
 use indexnode_core::{
     compute_merkle_root, hash_content, AIExtractor, BlockchainClient, Coordinator, Crawler,
-    CreditManager, DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig, JobParams,
-    JobQueue, JobStatus, MarketplaceClient, TimestampClient,
+    CreditManager, DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig,
+    JobParams, JobQueue, JobStatus, MarketplaceClient, TimestampClient,
     Worker as DistributedWorker, WorkerConfig as DistributedWorkerConfig,
 };
 use std::collections::HashMap;
@@ -391,6 +391,11 @@ async fn run_worker(
             break;
         }
 
+        // Retry any pending on-chain Merkle commits before processing new jobs.
+        if let Err(e) = retry_pending_commits(timestamp_client.as_ref(), &pool).await {
+            tracing::error!("retry_pending_commits error: {:?}", e);
+        }
+
         match queue.dequeue().await {
             Ok(Some(job)) => {
                 let _timer = crate::metrics::TimedOperation::new("job_processing_duration_seconds");
@@ -524,11 +529,20 @@ async fn run_worker(
                         )
                         .await
                         {
-                            Ok(_) => {
+                            Ok(IndexResult::Completed) => {
                                 queue
                                     .update_status(job.id, JobStatus::Completed, None)
                                     .await?;
-                                tracing::info!("Blockchain job {} completed successfully", job.id);
+                                tracing::info!("Blockchain job {} completed", job.id);
+                            }
+                            Ok(IndexResult::PendingCommit) => {
+                                queue
+                                    .update_status(job.id, JobStatus::PendingCommit, None)
+                                    .await?;
+                                tracing::info!(
+                                    "Blockchain job {} indexed; on-chain commit queued for retry",
+                                    job.id
+                                );
                             }
                             Err(e) => {
                                 tracing::error!("Blockchain job {} failed: {:?}", job.id, e);
@@ -565,6 +579,175 @@ async fn run_worker(
     Ok(())
 }
 
+/// Outcome of a blockchain indexing run.
+enum IndexResult {
+    /// All events indexed and Merkle root committed on-chain.
+    Completed,
+    /// Events indexed but the on-chain commit failed; queued for retry.
+    PendingCommit,
+}
+
+const MAX_COMMIT_RETRIES: i32 = 5;
+
+/// Retries any pending on-chain Merkle commits that are due (next_retry_at <= now()).
+/// Uses exponential backoff: 30s * 2^attempt (30s, 60s, 120s, 240s, 480s).
+async fn retry_pending_commits(
+    timestamp_client: Option<&TimestampClient>,
+    pool: &sqlx::PgPool,
+) -> anyhow::Result<()> {
+    use sqlx::Row;
+
+    let rows = sqlx::query(
+        "SELECT id, job_id, merkle_root, event_chain, attempt_count
+         FROM pending_merkle_commits
+         WHERE status = 'pending' AND next_retry_at <= now() AND attempt_count < $1",
+    )
+    .bind(MAX_COMMIT_RETRIES)
+    .fetch_all(pool)
+    .await?;
+
+    for row in rows {
+        let commit_id: Uuid = row.get("id");
+        let job_id: Uuid = row.get("job_id");
+        let merkle_root: String = row.get("merkle_root");
+        let event_chain: String = row.get("event_chain");
+        let attempt_count: i32 = row.get("attempt_count");
+        let next_attempt = attempt_count + 1;
+
+        match timestamp_client {
+            Some(ts) => match ts.commit_hash(&merkle_root).await {
+                Ok((tx_hash, block_number)) => {
+                    let tx_hash_str = format!("{:?}", tx_hash);
+
+                    if let Err(e) = sqlx::query(
+                        "INSERT INTO timestamp_commits (content_hash, transaction_hash, block_number, chain, job_id)
+                         VALUES ($1, $2, $3, $4, $5)
+                         ON CONFLICT (content_hash) DO NOTHING",
+                    )
+                    .bind(&merkle_root)
+                    .bind(&tx_hash_str)
+                    .bind(block_number as i64)
+                    .bind(&event_chain)
+                    .bind(job_id)
+                    .execute(pool)
+                    .await
+                    {
+                        tracing::error!("retry: failed to store timestamp_commit for job {}: {:?}", job_id, e);
+                        continue;
+                    }
+
+                    // Stamp the batch Merkle root onto all events in this job.
+                    if let Err(e) = sqlx::query(
+                        "UPDATE blockchain_events SET merkle_root = $1 WHERE job_id = $2 AND merkle_root IS NULL",
+                    )
+                    .bind(&merkle_root)
+                    .bind(job_id)
+                    .execute(pool)
+                    .await
+                    {
+                        tracing::error!("retry: failed to stamp merkle_root on events for job {}: {:?}", job_id, e);
+                    }
+
+                    let _ = sqlx::query(
+                        "UPDATE pending_merkle_commits SET status = 'committed' WHERE id = $1",
+                    )
+                    .bind(commit_id)
+                    .execute(pool)
+                    .await;
+
+                    let _ = sqlx::query(
+                        "UPDATE jobs SET status = 'completed', completed_at = now()
+                         WHERE id = $1 AND status = 'pending_commit'",
+                    )
+                    .bind(job_id)
+                    .execute(pool)
+                    .await;
+
+                    tracing::info!(
+                        "Pending commit {} for job {} committed on attempt {}",
+                        commit_id, job_id, next_attempt
+                    );
+                }
+                Err(e) => {
+                    if next_attempt >= MAX_COMMIT_RETRIES {
+                        let err_msg = format!(
+                            "On-chain Merkle commitment failed after {} retries: {}",
+                            MAX_COMMIT_RETRIES, e
+                        );
+                        let _ = sqlx::query(
+                            "UPDATE pending_merkle_commits
+                             SET status = 'failed', attempt_count = $1, last_error = $2
+                             WHERE id = $3",
+                        )
+                        .bind(next_attempt)
+                        .bind(e.to_string())
+                        .bind(commit_id)
+                        .execute(pool)
+                        .await;
+
+                        let _ = sqlx::query(
+                            "UPDATE jobs SET status = 'failed', error = $1
+                             WHERE id = $2 AND status = 'pending_commit'",
+                        )
+                        .bind(&err_msg)
+                        .bind(job_id)
+                        .execute(pool)
+                        .await;
+
+                        tracing::error!(
+                            "Commit {} for job {} permanently failed after {} retries",
+                            commit_id, job_id, MAX_COMMIT_RETRIES
+                        );
+                    } else {
+                        let backoff_secs = 30i64 * 2i64.pow(next_attempt as u32);
+                        let next_retry_at =
+                            chrono::Utc::now() + chrono::Duration::seconds(backoff_secs);
+
+                        let _ = sqlx::query(
+                            "UPDATE pending_merkle_commits
+                             SET attempt_count = $1, next_retry_at = $2, last_error = $3
+                             WHERE id = $4",
+                        )
+                        .bind(next_attempt)
+                        .bind(next_retry_at)
+                        .bind(e.to_string())
+                        .bind(commit_id)
+                        .execute(pool)
+                        .await;
+
+                        tracing::warn!(
+                            "Commit {} for job {} failed (attempt {}/{}), next retry at {}",
+                            commit_id, job_id, next_attempt, MAX_COMMIT_RETRIES, next_retry_at
+                        );
+                    }
+                }
+            },
+            None => {
+                // No timestamp client — cannot commit. Fail immediately rather than spinning.
+                let _ = sqlx::query(
+                    "UPDATE pending_merkle_commits
+                     SET status = 'failed', last_error = 'TimestampRegistry not configured'
+                     WHERE id = $1",
+                )
+                .bind(commit_id)
+                .execute(pool)
+                .await;
+
+                let _ = sqlx::query(
+                    "UPDATE jobs SET status = 'failed',
+                     error = 'On-chain Merkle commitment failed: TIMESTAMP_REGISTRY_ADDRESS is not configured'
+                     WHERE id = $1 AND status = 'pending_commit'",
+                )
+                .bind(job_id)
+                .execute(pool)
+                .await;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 async fn process_blockchain_index(
     chain_clients: &HashMap<String, BlockchainClient>,
     ipfs: &IpfsStorage,
@@ -574,7 +757,7 @@ async fn process_blockchain_index(
     pool: &sqlx::PgPool,
     job: &Job,
     ai_timeout: Duration,
-) -> Result<()> {
+) -> Result<IndexResult> {
     let config: JobConfig =
         serde_json::from_value(job.config.clone()).context("Failed to parse job config")?;
     let params = match config.params {
@@ -661,24 +844,10 @@ async fn process_blockchain_index(
     let mut all_content_hashes: Vec<String> = Vec::new();
     let mut indexed_event_ids: Vec<uuid::Uuid> = Vec::new();
 
-    let enable_ai: bool =
-        sqlx::query_scalar::<_, bool>("SELECT enable_ai_extraction FROM jobs WHERE id = $1")
-            .bind(job.id)
-            .fetch_one(pool)
-            .await
-            .unwrap_or(false);
-
-    let extraction_schema: Option<serde_json::Value> = if enable_ai {
-        sqlx::query_scalar::<_, Option<serde_json::Value>>(
-            "SELECT extraction_schema FROM jobs WHERE id = $1",
-        )
-        .bind(job.id)
-        .fetch_one(pool)
-        .await
-        .unwrap_or(None)
-    } else {
-        None
-    };
+    let enable_ai = params.enable_ai;
+    let extraction_schema = params.extraction_schema.clone();
+    // Default budget: 100,000 tokens per job when AI is enabled.
+    let mut tokens_remaining: u32 = params.ai_token_budget.unwrap_or(100_000);
 
     for mut event in all_events {
         let event_id = uuid::Uuid::new_v4();
@@ -720,29 +889,58 @@ async fn process_blockchain_index(
         .execute(pool)
         .await?;
 
-        if enable_ai {
+        if enable_ai && tokens_remaining > 0 {
             if let (Some(schema), Some(ai)) = (&extraction_schema, ai) {
                 let schema_str = serde_json::to_string(schema)?;
                 let event_str = serde_json::to_string(&event.event_data)?;
 
-                let extracted = tokio::time::timeout(
+                match tokio::time::timeout(
                     ai_timeout,
                     ai.extract_structured_data(&event_str, &schema_str),
                 )
                 .await
-                .map_err(|_| anyhow::anyhow!("AI extraction timed out after {:?}", ai_timeout))??;
+                {
+                    Err(_) => {
+                        tracing::warn!(
+                            "Job {}: AI extraction timed out for event {}",
+                            job.id, event_id
+                        );
+                    }
+                    Ok(Err(e)) => {
+                        tracing::warn!(
+                            "Job {}: AI extraction failed for event {}: {:?}",
+                            job.id, event_id, e
+                        );
+                    }
+                    Ok(Ok(result)) => {
+                        tokens_remaining = tokens_remaining.saturating_sub(result.tokens_used);
 
-                crate::metrics::record_ai_extraction();
+                        crate::metrics::record_ai_extraction();
 
-                sqlx::query(
-                    "INSERT INTO ai_extractions (blockchain_event_id, extraction_type, schema_definition, extracted_data)
-                     VALUES ($1, 'structured', $2, $3)",
-                )
-                .bind(event_id)
-                .bind(schema)
-                .bind(extracted)
-                .execute(pool)
-                .await?;
+                        if let Err(e) = sqlx::query(
+                            "INSERT INTO ai_extractions (blockchain_event_id, extraction_type, schema_definition, extracted_data)
+                             VALUES ($1, 'structured', $2, $3)",
+                        )
+                        .bind(event_id)
+                        .bind(schema)
+                        .bind(result.data)
+                        .execute(pool)
+                        .await
+                        {
+                            tracing::error!(
+                                "Job {}: failed to store AI extraction for event {}: {:?}",
+                                job.id, event_id, e
+                            );
+                        }
+
+                        if tokens_remaining == 0 {
+                            tracing::warn!(
+                                "Job {}: AI token budget exhausted after event {}; skipping remaining extractions",
+                                job.id, event_id
+                            );
+                        }
+                    }
+                }
             }
         }
 
@@ -806,23 +1004,43 @@ async fn process_blockchain_index(
                     );
                 }
                 Err(e) => {
-                    // Log but don't fail the job — indexing succeeded.
+                    // Indexing succeeded but commit failed. Queue for retry.
                     tracing::error!(
-                        "Job {}: on-chain Merkle commitment failed (events are indexed): {:?}",
+                        "Job {}: on-chain Merkle commitment failed; queuing for retry: {:?}",
                         job.id,
                         e
                     );
+                    if let Err(db_err) = sqlx::query(
+                        "INSERT INTO pending_merkle_commits (job_id, merkle_root, event_chain, last_error)
+                         VALUES ($1, $2, $3, $4)",
+                    )
+                    .bind(job.id)
+                    .bind(&merkle_root)
+                    .bind(&params.chain)
+                    .bind(e.to_string())
+                    .execute(pool)
+                    .await
+                    {
+                        tracing::error!(
+                            "Job {}: failed to insert pending_merkle_commit: {:?}",
+                            job.id,
+                            db_err
+                        );
+                    }
+                    return Ok(IndexResult::PendingCommit);
                 }
             },
             None => {
                 tracing::warn!(
-                    "Job {}: TimestampClient not configured — Merkle root {} not committed on-chain",
+                    "Job {}: TIMESTAMP_REGISTRY_ADDRESS not configured — Merkle root {} not committed on-chain",
                     job.id,
                     merkle_root
                 );
+                // No client means no retries are possible. Return Completed so the
+                // job isn't stuck; the data is indexed and available.
             }
         }
     }
 
-    Ok(())
+    Ok(IndexResult::Completed)
 }

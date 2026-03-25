@@ -18,8 +18,22 @@ struct Message {
 }
 
 #[derive(Deserialize)]
+struct UsageInfo {
+    input_tokens: u32,
+    output_tokens: u32,
+}
+
+#[derive(Deserialize)]
 struct ClaudeResponse {
     content: Vec<ContentBlock>,
+    #[serde(default)]
+    usage: Option<UsageInfo>,
+}
+
+/// Result of a structured extraction, including the data and how many tokens were consumed.
+pub struct ExtractionResult {
+    pub data: serde_json::Value,
+    pub tokens_used: u32,
 }
 
 #[derive(Deserialize)]
@@ -45,7 +59,7 @@ impl AIExtractor {
         &self,
         raw_content: &str,
         schema: &str,
-    ) -> Result<serde_json::Value> {
+    ) -> Result<ExtractionResult> {
         let prompt = format!(
             "Extract structured data from the following content according to this schema:\n\nSchema:\n{}\n\nContent:\n{}\n\nReturn only valid JSON matching the schema.",
             schema, raw_content
@@ -94,7 +108,15 @@ impl AIExtractor {
         let json_value =
             serde_json::from_str(&extracted_text).context("Failed to parse extracted JSON")?;
 
-        Ok(json_value)
+        let tokens_used = claude_response
+            .usage
+            .map(|u| u.input_tokens + u.output_tokens)
+            .unwrap_or(0);
+
+        Ok(ExtractionResult {
+            data: json_value,
+            tokens_used,
+        })
     }
 
     pub async fn summarize_content(&self, content: &str, max_length: usize) -> Result<String> {
