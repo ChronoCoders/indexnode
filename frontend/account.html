@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - IndexNode</title>
+    <link rel="icon" href="data:,">
+    <meta name="description" content="Manage your IndexNode account — API keys, webhooks, and profile settings.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/tailwind.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .spinner {
+            border: 3px solid rgba(6, 182, 212, 0.1);
+            border-top-color: #06b6d4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* One-time reveal box */
+        .reveal-box {
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading account…</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-gray-950/80 backdrop-blur-md border-b border-gray-800 z-40">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="dashboard.html" class="text-gray-400 hover:text-cyan-400 transition">Dashboard</a>
+                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
+                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
+                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
+                    <a href="account.html" class="text-cyan-400 transition font-medium">Account</a>
+                    <button data-logout class="text-gray-400 hover:text-cyan-400 transition">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="hidden pt-24 pb-16">
+        <div class="container mx-auto px-6 max-w-4xl">
+
+            <!-- Header -->
+            <div class="mb-10">
+                <h1 class="text-4xl font-bold mb-2">Account Settings</h1>
+                <p class="text-gray-400">Manage your profile, API keys, and webhook subscriptions.</p>
+            </div>
+
+            <!-- ── Profile ─────────────────────────────────────────────────── -->
+            <section class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-1">Profile</h2>
+                <p class="text-gray-500 text-sm mb-6">Your account identity on IndexNode.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">User ID</label>
+                        <p class="font-mono text-sm text-gray-300 bg-gray-800 rounded px-3 py-2 select-all" id="profileUserId">—</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-800">
+                    <p class="text-sm text-gray-400 mb-3">To change your password, we'll send a reset link to your registered email address.</p>
+                    <a href="forgot-password.html" class="inline-block bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-md text-sm font-medium transition">
+                        Send password reset email →
+                    </a>
+                </div>
+            </section>
+
+            <!-- ── API Keys ────────────────────────────────────────────────── -->
+            <section class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+                <div class="flex items-start justify-between mb-1">
+                    <h2 class="text-xl font-semibold">API Keys</h2>
+                    <button id="showCreateKeyForm" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                        + New Key
+                    </button>
+                </div>
+                <p class="text-gray-500 text-sm mb-6">
+                    Keys start with <code class="bg-gray-800 text-cyan-400 rounded px-1 text-xs">ink_</code> and authenticate all API and SDK requests. The raw key is shown once — store it securely.
+                </p>
+
+                <!-- Create form (hidden by default) -->
+                <div id="createKeyForm" class="hidden mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                    <h3 class="text-sm font-semibold mb-3">Create new API key</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input
+                            type="text"
+                            id="newKeyName"
+                            placeholder="Name (e.g. CI pipeline, local dev)"
+                            maxlength="80"
+                            class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 text-sm"
+                        >
+                        <select
+                            id="newKeyExpiry"
+                            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 text-sm"
+                        >
+                            <option value="">Never expires</option>
+                            <option value="30">30 days</option>
+                            <option value="90">90 days</option>
+                            <option value="365">1 year</option>
+                        </select>
+                        <button id="createKeyBtn" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md text-sm font-medium transition whitespace-nowrap">
+                            Create
+                        </button>
+                        <button id="cancelCreateKey" class="text-gray-400 hover:text-gray-200 px-3 py-2 rounded-md text-sm transition">
+                            Cancel
+                        </button>
+                    </div>
+                    <p id="createKeyFeedback" class="hidden mt-2 text-sm"></p>
+                </div>
+
+                <!-- One-time reveal box -->
+                <div id="newKeyReveal" class="hidden mb-6 reveal-box rounded-lg p-4">
+                    <div class="flex items-start gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-400 shrink-0 mt-0.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <p class="text-sm text-cyan-300 font-medium">Copy this key now — it won't be shown again.</p>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3">
+                        <code id="newKeyValue" class="flex-1 font-mono text-xs text-cyan-200 bg-gray-900 rounded px-3 py-2 break-all select-all"></code>
+                        <button id="copyKeyBtn" class="shrink-0 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md text-xs font-medium transition">Copy</button>
+                    </div>
+                </div>
+
+                <!-- Keys list -->
+                <div id="apiKeysList">
+                    <p class="text-gray-500 text-sm">Loading…</p>
+                </div>
+            </section>
+
+            <!-- ── Webhooks ────────────────────────────────────────────────── -->
+            <section class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+                <div class="flex items-start justify-between mb-1">
+                    <h2 class="text-xl font-semibold">Webhooks</h2>
+                    <button id="showCreateWebhookForm" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                        + New Webhook
+                    </button>
+                </div>
+                <p class="text-gray-500 text-sm mb-6">
+                    Receive HMAC-signed <code class="bg-gray-800 text-cyan-400 rounded px-1 text-xs">POST</code> callbacks when jobs complete or fail.
+                    Verify with the <code class="bg-gray-800 text-cyan-400 rounded px-1 text-xs">X-IndexNode-Signature</code> header.
+                </p>
+
+                <!-- Create form (hidden by default) -->
+                <div id="createWebhookForm" class="hidden mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                    <h3 class="text-sm font-semibold mb-3">Register webhook endpoint</h3>
+                    <div class="space-y-3">
+                        <input
+                            type="url"
+                            id="newWebhookUrl"
+                            placeholder="https://your-server.com/webhooks/indexnode"
+                            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 text-sm"
+                        >
+                        <div class="flex items-center gap-4">
+                            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                                <input type="checkbox" id="eventCompleted" checked class="rounded border-gray-600 bg-gray-700 text-cyan-600 focus:ring-cyan-600">
+                                <span>job.completed</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                                <input type="checkbox" id="eventFailed" checked class="rounded border-gray-600 bg-gray-700 text-cyan-600 focus:ring-cyan-600">
+                                <span>job.failed</span>
+                            </label>
+                        </div>
+                        <div class="flex gap-3">
+                            <button id="createWebhookBtn" class="bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-md text-sm font-medium transition">
+                                Register
+                            </button>
+                            <button id="cancelCreateWebhook" class="text-gray-400 hover:text-gray-200 px-3 py-2 rounded-md text-sm transition">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    <p id="createWebhookFeedback" class="hidden mt-2 text-sm"></p>
+                </div>
+
+                <!-- One-time secret reveal box -->
+                <div id="newWebhookReveal" class="hidden mb-6 reveal-box rounded-lg p-4">
+                    <div class="flex items-start gap-2 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-400 shrink-0 mt-0.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <p class="text-sm text-cyan-300 font-medium">Copy the signing secret now — it won't be shown again.</p>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3">
+                        <code id="newWebhookSecret" class="flex-1 font-mono text-xs text-cyan-200 bg-gray-900 rounded px-3 py-2 break-all select-all"></code>
+                        <button id="copySecretBtn" class="shrink-0 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md text-xs font-medium transition">Copy</button>
+                    </div>
+                </div>
+
+                <!-- Webhooks list -->
+                <div id="webhooksList">
+                    <p class="text-gray-500 text-sm">Loading…</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-gray-950">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
+                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
+                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
+                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
+                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
+                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
+                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
+                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
+            </div>
+            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
+                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/account.js"></script>
+</body>
+</html>
