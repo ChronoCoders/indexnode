@@ -1,0 +1,353 @@
+const API = '';   // same origin
+
+function authHeaders() {
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${window.auth.getToken()}`,
+    };
+}
+
+async function api(method, path, body) {
+    const res = await fetch(API + path, {
+        method,
+        headers: authHeaders(),
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 204) return null;
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.message ?? `HTTP ${res.status}`);
+    return json;
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+setTimeout(() => {
+    const ls = document.getElementById('loadingScreen');
+    if (ls && !ls.classList.contains('hidden')) window.location.href = 'login.html';
+}, 3000);
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.auth?.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+
+    loadProfile();
+    loadApiKeys();
+    loadWebhooks();
+    setupLogout();
+    setupApiKeySection();
+    setupWebhookSection();
+});
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+
+function loadProfile() {
+    const el = document.getElementById('profileUserId');
+    if (el) el.textContent = window.auth.getUserId() ?? '—';
+}
+
+// ── API Keys ──────────────────────────────────────────────────────────────────
+
+async function loadApiKeys() {
+    const container = document.getElementById('apiKeysList');
+    try {
+        const keys = await api('GET', '/api/v1/api-keys');
+        renderApiKeys(keys);
+    } catch (err) {
+        container.innerHTML = `<p class="text-red-400 text-sm">${err.message}</p>`;
+    }
+}
+
+function renderApiKeys(keys) {
+    const container = document.getElementById('apiKeysList');
+    if (!keys.length) {
+        container.innerHTML = `<p class="text-gray-500 text-sm">No API keys yet. Create one above to get started.</p>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-gray-400 border-b border-gray-800">
+                        <th class="pb-3 pr-6 font-medium">Name</th>
+                        <th class="pb-3 pr-6 font-medium">Key prefix</th>
+                        <th class="pb-3 pr-6 font-medium">Last used</th>
+                        <th class="pb-3 pr-6 font-medium">Expires</th>
+                        <th class="pb-3 font-medium"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800">
+                    ${keys.map(k => `
+                    <tr data-key-id="${k.id}">
+                        <td class="py-3 pr-6 text-gray-200">${escHtml(k.name)}</td>
+                        <td class="py-3 pr-6 font-mono text-xs text-cyan-400">${escHtml(k.key_prefix)}…</td>
+                        <td class="py-3 pr-6 text-gray-400">${k.last_used_at ? relativeTime(k.last_used_at) : 'Never'}</td>
+                        <td class="py-3 pr-6 text-gray-400">${k.expires_at ? formatDate(k.expires_at) : 'Never'}</td>
+                        <td class="py-3 text-right">
+                            <button
+                                onclick="revokeApiKey('${k.id}')"
+                                class="text-xs text-red-400 hover:text-red-300 transition"
+                            >Revoke</button>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+}
+
+function setupApiKeySection() {
+    const showBtn   = document.getElementById('showCreateKeyForm');
+    const form      = document.getElementById('createKeyForm');
+    const cancelBtn = document.getElementById('cancelCreateKey');
+    const createBtn = document.getElementById('createKeyBtn');
+    const feedback  = document.getElementById('createKeyFeedback');
+
+    showBtn.addEventListener('click', () => {
+        form.classList.remove('hidden');
+        showBtn.classList.add('hidden');
+        document.getElementById('newKeyReveal').classList.add('hidden');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        form.classList.add('hidden');
+        showBtn.classList.remove('hidden');
+        clearFeedback(feedback);
+    });
+
+    createBtn.addEventListener('click', async () => {
+        const name = document.getElementById('newKeyName').value.trim();
+        const expiry = document.getElementById('newKeyExpiry').value;
+
+        if (!name) {
+            showFeedback(feedback, 'error', 'Name is required.');
+            return;
+        }
+
+        createBtn.disabled = true;
+        createBtn.textContent = 'Creating…';
+        clearFeedback(feedback);
+
+        try {
+            const body = { name };
+            if (expiry) body.expires_in_days = parseInt(expiry, 10);
+
+            const key = await api('POST', '/api/v1/api-keys', body);
+
+            // Show one-time reveal.
+            const revealBox = document.getElementById('newKeyReveal');
+            document.getElementById('newKeyValue').textContent = key.key;
+            revealBox.classList.remove('hidden');
+
+            document.getElementById('copyKeyBtn').onclick = () => copyText(key.key, 'copyKeyBtn');
+
+            // Reset & hide form.
+            form.classList.add('hidden');
+            showBtn.classList.remove('hidden');
+            document.getElementById('newKeyName').value = '';
+            document.getElementById('newKeyExpiry').value = '';
+            clearFeedback(feedback);
+
+            await loadApiKeys();
+        } catch (err) {
+            showFeedback(feedback, 'error', err.message);
+        } finally {
+            createBtn.disabled = false;
+            createBtn.textContent = 'Create';
+        }
+    });
+}
+
+async function revokeApiKey(id) {
+    if (!confirm('Revoke this API key? Any integrations using it will stop working immediately.')) return;
+    try {
+        await api('DELETE', `/api/v1/api-keys/${id}`);
+        await loadApiKeys();
+        // Hide reveal box if it belongs to the just-revoked key.
+        document.getElementById('newKeyReveal').classList.add('hidden');
+    } catch (err) {
+        alert(`Failed to revoke key: ${err.message}`);
+    }
+}
+
+// ── Webhooks ──────────────────────────────────────────────────────────────────
+
+async function loadWebhooks() {
+    const container = document.getElementById('webhooksList');
+    try {
+        const hooks = await api('GET', '/api/v1/webhooks');
+        renderWebhooks(hooks);
+    } catch (err) {
+        container.innerHTML = `<p class="text-red-400 text-sm">${err.message}</p>`;
+    }
+}
+
+function renderWebhooks(hooks) {
+    const container = document.getElementById('webhooksList');
+    if (!hooks.length) {
+        container.innerHTML = `<p class="text-gray-500 text-sm">No webhooks yet. Register one above to receive job notifications.</p>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="space-y-3">
+            ${hooks.map(h => `
+            <div class="flex items-start gap-4 p-4 bg-gray-800 rounded-lg" data-hook-id="${h.id}">
+                <div class="flex-1 min-w-0">
+                    <p class="font-mono text-sm text-gray-200 truncate" title="${escHtml(h.url)}">${escHtml(h.url)}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        ${h.events.map(ev => `<span class="text-xs bg-gray-700 text-gray-300 rounded px-1.5 py-0.5">${escHtml(ev)}</span>`).join('')}
+                        ${h.is_active
+                            ? `<span class="text-xs text-green-400">active</span>`
+                            : `<span class="text-xs text-gray-500">inactive</span>`}
+                        <span class="text-xs text-gray-600">since ${formatDate(h.created_at)}</span>
+                    </div>
+                </div>
+                <button
+                    onclick="deleteWebhook('${h.id}')"
+                    class="shrink-0 text-xs text-red-400 hover:text-red-300 transition"
+                >Delete</button>
+            </div>`).join('')}
+        </div>`;
+}
+
+function setupWebhookSection() {
+    const showBtn   = document.getElementById('showCreateWebhookForm');
+    const form      = document.getElementById('createWebhookForm');
+    const cancelBtn = document.getElementById('cancelCreateWebhook');
+    const createBtn = document.getElementById('createWebhookBtn');
+    const feedback  = document.getElementById('createWebhookFeedback');
+
+    showBtn.addEventListener('click', () => {
+        form.classList.remove('hidden');
+        showBtn.classList.add('hidden');
+        document.getElementById('newWebhookReveal').classList.add('hidden');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        form.classList.add('hidden');
+        showBtn.classList.remove('hidden');
+        clearFeedback(feedback);
+    });
+
+    createBtn.addEventListener('click', async () => {
+        const url = document.getElementById('newWebhookUrl').value.trim();
+        const completed = document.getElementById('eventCompleted').checked;
+        const failed    = document.getElementById('eventFailed').checked;
+
+        if (!url) {
+            showFeedback(feedback, 'error', 'URL is required.');
+            return;
+        }
+        if (!completed && !failed) {
+            showFeedback(feedback, 'error', 'Select at least one event type.');
+            return;
+        }
+
+        const events = [];
+        if (completed) events.push('job.completed');
+        if (failed)    events.push('job.failed');
+
+        createBtn.disabled = true;
+        createBtn.textContent = 'Registering…';
+        clearFeedback(feedback);
+
+        try {
+            const hook = await api('POST', '/api/v1/webhooks', { url, events });
+
+            const revealBox = document.getElementById('newWebhookReveal');
+            document.getElementById('newWebhookSecret').textContent = hook.secret;
+            revealBox.classList.remove('hidden');
+
+            document.getElementById('copySecretBtn').onclick = () => copyText(hook.secret, 'copySecretBtn');
+
+            form.classList.add('hidden');
+            showBtn.classList.remove('hidden');
+            document.getElementById('newWebhookUrl').value = '';
+            document.getElementById('eventCompleted').checked = true;
+            document.getElementById('eventFailed').checked = true;
+            clearFeedback(feedback);
+
+            await loadWebhooks();
+        } catch (err) {
+            showFeedback(feedback, 'error', err.message);
+        } finally {
+            createBtn.disabled = false;
+            createBtn.textContent = 'Register';
+        }
+    });
+}
+
+async function deleteWebhook(id) {
+    if (!confirm('Delete this webhook? It will stop receiving event callbacks.')) return;
+    try {
+        await api('DELETE', `/api/v1/webhooks/${id}`);
+        await loadWebhooks();
+        document.getElementById('newWebhookReveal').classList.add('hidden');
+    } catch (err) {
+        alert(`Failed to delete webhook: ${err.message}`);
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function setupLogout() {
+    document.querySelector('[data-logout]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.auth.logout();
+    });
+}
+
+function showFeedback(el, type, message) {
+    el.classList.remove('hidden', 'text-green-400', 'text-red-400');
+    el.classList.add(type === 'success' ? 'text-green-400' : 'text-red-400');
+    el.textContent = message;
+}
+
+function clearFeedback(el) {
+    el.classList.add('hidden');
+    el.textContent = '';
+}
+
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function formatDate(iso) {
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function relativeTime(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1)   return 'Just now';
+    if (mins < 60)  return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)   return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30)  return `${days}d ago`;
+    return formatDate(iso);
+}
+
+async function copyText(text, btnId) {
+    const btn = document.getElementById(btnId);
+    try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 2000);
+        }
+    } catch {
+        // Clipboard API not available (non-HTTPS dev).
+        if (btn) btn.textContent = 'Select manually';
+    }
+}
