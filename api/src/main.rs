@@ -427,12 +427,14 @@ async fn run_worker(
                                         Some("crawl timed out".to_string()),
                                     )
                                     .await?;
+                                fire_webhooks(&pool, job.id, job.user_id, "job.failed").await;
                             }
                             Ok(Err(e)) => {
                                 tracing::error!("Job {} failed: {:?}", job.id, e);
                                 queue
                                     .update_status(job.id, JobStatus::Failed, Some(e.to_string()))
                                     .await?;
+                                fire_webhooks(&pool, job.id, job.user_id, "job.failed").await;
                             }
                             Ok(Ok(links)) => {
                                 tracing::info!("Crawled {} links for job {}", links.len(), job.id);
@@ -511,7 +513,7 @@ async fn run_worker(
                                     .bind(job.id)
                                     .execute(&pool)
                                     .await?;
-
+                                fire_webhooks(&pool, job.id, job.user_id, "job.completed").await;
                                 tracing::info!("Job {} completed successfully", job.id);
                             }
                         }
@@ -533,6 +535,7 @@ async fn run_worker(
                                 queue
                                     .update_status(job.id, JobStatus::Completed, None)
                                     .await?;
+                                fire_webhooks(&pool, job.id, job.user_id, "job.completed").await;
                                 tracing::info!("Blockchain job {} completed", job.id);
                             }
                             Ok(IndexResult::PendingCommit) => {
@@ -549,6 +552,7 @@ async fn run_worker(
                                 queue
                                     .update_status(job.id, JobStatus::Failed, Some(e.to_string()))
                                     .await?;
+                                fire_webhooks(&pool, job.id, job.user_id, "job.failed").await;
                             }
                         }
                     }
@@ -598,9 +602,11 @@ async fn retry_pending_commits(
     use sqlx::Row;
 
     let rows = sqlx::query(
-        "SELECT id, job_id, merkle_root, event_chain, attempt_count
-         FROM pending_merkle_commits
-         WHERE status = 'pending' AND next_retry_at <= now() AND attempt_count < $1",
+        "SELECT pmc.id, pmc.job_id, pmc.merkle_root, pmc.event_chain, pmc.attempt_count,
+                j.user_id
+         FROM pending_merkle_commits pmc
+         JOIN jobs j ON j.id = pmc.job_id
+         WHERE pmc.status = 'pending' AND pmc.next_retry_at <= now() AND pmc.attempt_count < $1",
     )
     .bind(MAX_COMMIT_RETRIES)
     .fetch_all(pool)
@@ -609,6 +615,7 @@ async fn retry_pending_commits(
     for row in rows {
         let commit_id: Uuid = row.get("id");
         let job_id: Uuid = row.get("job_id");
+        let user_id: Uuid = row.get("user_id");
         let merkle_root: String = row.get("merkle_root");
         let event_chain: String = row.get("event_chain");
         let attempt_count: i32 = row.get("attempt_count");
@@ -663,6 +670,7 @@ async fn retry_pending_commits(
                     .execute(pool)
                     .await;
 
+                    fire_webhooks(pool, job_id, user_id, "job.completed").await;
                     tracing::info!(
                         "Pending commit {} for job {} committed on attempt {}",
                         commit_id, job_id, next_attempt
@@ -694,6 +702,7 @@ async fn retry_pending_commits(
                         .execute(pool)
                         .await;
 
+                        fire_webhooks(pool, job_id, user_id, "job.failed").await;
                         tracing::error!(
                             "Commit {} for job {} permanently failed after {} retries",
                             commit_id, job_id, MAX_COMMIT_RETRIES
@@ -1043,4 +1052,137 @@ async fn process_blockchain_index(
     }
 
     Ok(IndexResult::Completed)
+}
+
+// ── Webhook dispatch ──────────────────────────────────────────────────────────
+
+/// Fires HMAC-SHA256-signed webhook callbacks for all active subscriptions
+/// matching `event` for `user_id`. Errors are logged and never propagated —
+/// delivery is best-effort. The request body is the same JSON payload for
+/// all subscribers; only the signature differs (per-secret).
+async fn fire_webhooks(pool: &sqlx::PgPool, job_id: Uuid, user_id: Uuid, event: &str) {
+    use sqlx::Row;
+
+    let rows = match sqlx::query(
+        "SELECT url, secret FROM webhook_subscriptions
+         WHERE user_id = $1 AND is_active = true AND $2 = ANY(events)",
+    )
+    .bind(user_id)
+    .bind(event)
+    .fetch_all(pool)
+    .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::error!("fire_webhooks: DB error: {:?}", e);
+            return;
+        }
+    };
+
+    if rows.is_empty() {
+        return;
+    }
+
+    let payload = serde_json::json!({
+        "id": format!("evt_{}", Uuid::new_v4().simple()),
+        "created": Utc::now().timestamp(),
+        "type": event,
+        "data": {
+            "job_id": job_id,
+            "user_id": user_id,
+            "status": event.strip_prefix("job.").unwrap_or(event),
+        }
+    });
+
+    let payload_bytes = match serde_json::to_vec(&payload) {
+        Ok(b) => b,
+        Err(e) => {
+            tracing::error!("fire_webhooks: serialization error: {:?}", e);
+            return;
+        }
+    };
+
+    let timeout_secs = env::var("WEBHOOK_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(10);
+
+    let client = match reqwest::Client::builder()
+        .timeout(Duration::from_secs(timeout_secs))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("fire_webhooks: failed to build HTTP client: {:?}", e);
+            return;
+        }
+    };
+
+    for row in &rows {
+        let url: String = row.get("url");
+        let secret: String = row.get("secret");
+
+        let sig = format!("sha256={}", hex::encode(hmac_sha256(secret.as_bytes(), &payload_bytes)));
+
+        match client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("X-IndexNode-Signature", &sig)
+            .header("X-IndexNode-Event", event)
+            .body(payload_bytes.clone())
+            .send()
+            .await
+        {
+            Ok(resp) if resp.status().is_success() => {
+                tracing::info!(
+                    "Webhook delivered to {} for job {} ({})",
+                    url, job_id, event
+                );
+            }
+            Ok(resp) => {
+                tracing::warn!(
+                    "Webhook to {} returned {} for job {}",
+                    url, resp.status(), job_id
+                );
+            }
+            Err(e) => {
+                tracing::warn!("Webhook to {} failed for job {}: {:?}", url, job_id, e);
+            }
+        }
+    }
+}
+
+/// HMAC-SHA256 computed in-house to avoid an extra crate dependency.
+/// Follows RFC 2104: HMAC(K, m) = H((K' ⊕ opad) ∥ H((K' ⊕ ipad) ∥ m))
+/// where K' is the key zero-padded to the hash block size (64 bytes for SHA-256).
+fn hmac_sha256(key: &[u8], message: &[u8]) -> Vec<u8> {
+    use sha2::{Digest, Sha256};
+    const BLOCK: usize = 64;
+
+    let mut k = [0u8; BLOCK];
+    if key.len() > BLOCK {
+        let h = Sha256::digest(key);
+        k[..32].copy_from_slice(&h);
+    } else {
+        k[..key.len()].copy_from_slice(key);
+    }
+
+    let mut ipad = k;
+    let mut opad = k;
+    for b in &mut ipad {
+        *b ^= 0x36;
+    }
+    for b in &mut opad {
+        *b ^= 0x5c;
+    }
+
+    let mut inner = Sha256::new();
+    inner.update(ipad);
+    inner.update(message);
+    let inner_hash = inner.finalize();
+
+    let mut outer = Sha256::new();
+    outer.update(opad);
+    outer.update(inner_hash);
+    outer.finalize().to_vec()
 }

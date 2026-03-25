@@ -2,7 +2,7 @@ use crate::handlers;
 use crate::middleware::require_auth;
 use axum::{
     middleware,
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use sqlx::PgPool;
@@ -27,9 +27,22 @@ pub fn create_routes(pool: PgPool) -> Router {
     let state = AppState { pool };
 
     Router::new()
+        // Jobs
         .route("/api/v1/jobs", post(handlers::create_job))
         .route("/api/v1/jobs/{id}", get(handlers::get_job))
         .route("/api/v1/verify", post(handlers::verify_hash))
+        // API keys
+        .route(
+            "/api/v1/api-keys",
+            post(handlers::create_api_key).get(handlers::list_api_keys),
+        )
+        .route("/api/v1/api-keys/{id}", delete(handlers::delete_api_key))
+        // Webhooks
+        .route(
+            "/api/v1/webhooks",
+            post(handlers::create_webhook).get(handlers::list_webhooks),
+        )
+        .route("/api/v1/webhooks/{id}", delete(handlers::delete_webhook))
         .route_layer(middleware::from_fn(require_auth))
         .with_state(state)
 }
