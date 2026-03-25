@@ -23,6 +23,7 @@ if (loginForm) {
 
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('rememberMe')?.checked ?? false;
         const submitBtn = loginForm.querySelector('button[type="submit"]');
 
         if (!email || !password) {
@@ -42,7 +43,7 @@ if (loginForm) {
             const res = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, remember_me: rememberMe }),
             });
 
             if (res.ok) {

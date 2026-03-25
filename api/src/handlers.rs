@@ -72,7 +72,7 @@ pub async fn register(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    let token = auth::create_token(user_id, "user").map_err(|e| {
+    let token = auth::create_token(user_id, "user", false).map_err(|e| {
         tracing::error!("Token creation error: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
@@ -97,6 +97,8 @@ pub async fn register(
 pub struct LoginRequest {
     email: String,
     password: String,
+    #[serde(default)]
+    remember_me: bool,
 }
 
 pub async fn login(
@@ -133,7 +135,7 @@ pub async fn login(
         return Err(StatusCode::UNAUTHORIZED);
     }
 
-    let token = auth::create_token(user.id, &user.role).map_err(|e| {
+    let token = auth::create_token(user.id, &user.role, req.remember_me).map_err(|e| {
         tracing::error!("Token creation error: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
@@ -271,6 +273,41 @@ pub struct VerifyHashResponse {
     pub block_number: Option<i64>,
     pub transaction_hash: Option<String>,
     pub committed_at: Option<String>,
+}
+
+// ── Me ────────────────────────────────────────────────────────────────────────
+
+#[derive(Serialize)]
+pub struct MeResponse {
+    pub user_id: String,
+    pub email: String,
+    pub role: String,
+    pub created_at: String,
+}
+
+/// Returns the authenticated user's own profile.
+pub async fn me(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+) -> Result<Json<MeResponse>, StatusCode> {
+    let user = sqlx::query_as::<_, User>(
+        "SELECT id, email, password_hash, role, created_at FROM users WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("me: DB error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?
+    .ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(MeResponse {
+        user_id: user.id.to_string(),
+        email: user.email,
+        role: user.role,
+        created_at: user.created_at.to_rfc3339(),
+    }))
 }
 
 /// Verifies a content hash against on-chain Merkle commitments.
