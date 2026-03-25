@@ -20,6 +20,8 @@ pub fn init_metrics() -> anyhow::Result<PrometheusHandle> {
     describe_counter!("credit_transactions", "Total credit transactions");
     describe_histogram!("http_request_duration_seconds", "HTTP request duration");
     describe_histogram!("job_processing_duration_seconds", "Job processing duration");
+    describe_counter!("jobs_completed_total", "Total jobs completed successfully");
+    describe_counter!("jobs_failed_total", "Total jobs that failed");
     describe_gauge!("active_workers", "Number of active workers");
     describe_gauge!("queue_depth", "Number of jobs in queue");
 
@@ -42,6 +44,14 @@ pub fn record_ai_extraction() {
 pub fn record_ipfs_upload(size_bytes: u64) {
     counter!("ipfs_uploads").increment(1);
     histogram!("ipfs_upload_size_bytes").record(size_bytes as f64);
+}
+
+pub fn record_job_completed() {
+    counter!("jobs_completed_total").increment(1);
+}
+
+pub fn record_job_failed() {
+    counter!("jobs_failed_total").increment(1);
 }
 
 pub fn update_active_workers(count: i64) {

@@ -27,6 +27,8 @@ pub fn create_routes(pool: PgPool) -> Router {
     let state = AppState { pool };
 
     Router::new()
+        // Profile
+        .route("/api/v1/me", get(handlers::me))
         // Jobs
         .route("/api/v1/jobs", post(handlers::create_job))
         .route("/api/v1/jobs/{id}", get(handlers::get_job))

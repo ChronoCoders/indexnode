@@ -447,6 +447,7 @@ async fn run_worker(
                                         Some("crawl timed out".to_string()),
                                     )
                                     .await?;
+                                crate::metrics::record_job_failed();
                                 fire_webhooks(&pool, job.id, job.user_id, "job.failed").await;
                             }
                             Ok(Err(e)) => {
@@ -454,6 +455,7 @@ async fn run_worker(
                                 queue
                                     .update_status(job.id, JobStatus::Failed, Some(e.to_string()))
                                     .await?;
+                                crate::metrics::record_job_failed();
                                 fire_webhooks(&pool, job.id, job.user_id, "job.failed").await;
                             }
                             Ok(Ok(links)) => {
@@ -533,6 +535,7 @@ async fn run_worker(
                                     .bind(job.id)
                                     .execute(&pool)
                                     .await?;
+                                crate::metrics::record_job_completed();
                                 fire_webhooks(&pool, job.id, job.user_id, "job.completed").await;
                                 tracing::info!("Job {} completed successfully", job.id);
                             }
@@ -546,6 +549,7 @@ async fn run_worker(
                                 queue
                                     .update_status(job.id, JobStatus::Completed, None)
                                     .await?;
+                                crate::metrics::record_job_completed();
                                 fire_webhooks(&pool, job.id, job.user_id, "job.completed").await;
                                 tracing::info!("Blockchain job {} completed", job.id);
                             }
@@ -563,6 +567,7 @@ async fn run_worker(
                                 queue
                                     .update_status(job.id, JobStatus::Failed, Some(e.to_string()))
                                     .await?;
+                                crate::metrics::record_job_failed();
                                 fire_webhooks(&pool, job.id, job.user_id, "job.failed").await;
                             }
                         }
@@ -681,6 +686,7 @@ async fn retry_pending_commits(
                     .execute(pool)
                     .await;
 
+                    crate::metrics::record_job_completed();
                     fire_webhooks(pool, job_id, user_id, "job.completed").await;
                     tracing::info!(
                         "Pending commit {} for job {} committed on attempt {}",
@@ -713,6 +719,7 @@ async fn retry_pending_commits(
                         .execute(pool)
                         .await;
 
+                        crate::metrics::record_job_failed();
                         fire_webhooks(pool, job_id, user_id, "job.failed").await;
                         tracing::error!(
                             "Commit {} for job {} permanently failed after {} retries",
