@@ -165,63 +165,6 @@ impl Query {
         }))
     }
 
-    /// Verifies a content hash against the on-chain Merkle commitment.
-    /// Accepts either an individual event content_hash or a batch Merkle root.
-    async fn verify_hash(
-        &self,
-        ctx: &Context<'_>,
-        content_hash: String,
-    ) -> async_graphql::Result<VerificationResult> {
-        let pool = ctx
-            .data::<PgPool>()
-            .map_err(|_| Error::new("Failed to get database pool"))?;
-
-        use sqlx::Row;
-
-        // Try direct lookup — handles Merkle roots committed directly.
-        let direct = sqlx::query(
-            "SELECT block_number, transaction_hash FROM timestamp_commits WHERE content_hash = $1 LIMIT 1",
-        )
-        .bind(&content_hash)
-        .fetch_optional(pool)
-        .await
-        .context("Failed to query timestamp commits")?;
-
-        if let Some(r) = direct {
-            return Ok(VerificationResult {
-                verified: true,
-                block_number: Some(r.get("block_number")),
-                transaction_hash: Some(r.get("transaction_hash")),
-            });
-        }
-
-        // Resolve via event → batch Merkle root → on-chain commit.
-        let via_event = sqlx::query(
-            "SELECT tc.block_number, tc.transaction_hash
-             FROM blockchain_events be
-             JOIN timestamp_commits tc ON tc.content_hash = be.merkle_root
-             WHERE be.content_hash = $1
-             LIMIT 1",
-        )
-        .bind(&content_hash)
-        .fetch_optional(pool)
-        .await
-        .context("Failed to query via event merkle root")?;
-
-        match via_event {
-            Some(r) => Ok(VerificationResult {
-                verified: true,
-                block_number: Some(r.get("block_number")),
-                transaction_hash: Some(r.get("transaction_hash")),
-            }),
-            None => Ok(VerificationResult {
-                verified: false,
-                block_number: None,
-                transaction_hash: None,
-            }),
-        }
-    }
-
     /// Fetches AI-powered extractions for a specific blockchain event.
     async fn ai_extractions(
         &self,
@@ -469,6 +412,25 @@ impl Mutation {
 
         let job_id = Uuid::new_v4();
 
+        // Validate and parse the optional AI extraction schema.
+        let enable_ai = input.enable_ai_extraction.unwrap_or(false);
+        let extraction_schema = if let Some(schema_str) = &input.extraction_schema {
+            let parsed: serde_json::Value = serde_json::from_str(schema_str)
+                .map_err(|e| Error::new(format!("Invalid extraction_schema JSON: {}", e)))?;
+            Some(parsed)
+        } else {
+            None
+        };
+        if enable_ai && extraction_schema.is_none() {
+            return Err(Error::new(
+                "extraction_schema is required when enable_ai_extraction is true",
+            ));
+        }
+        // Cap the token budget to prevent unbounded cost.
+        let ai_token_budget = input
+            .ai_token_budget
+            .map(|b| (b.max(1) as u32).min(1_000_000));
+
         let config = JobConfig {
             job_type: JobType::BlockchainIndex,
             params: JobParams::BlockchainIndex(BlockchainIndexParams {
@@ -477,6 +439,9 @@ impl Mutation {
                 events: input.events,
                 from_block: input.from_block as u64,
                 to_block: input.to_block.map(|b| b as u64),
+                enable_ai,
+                extraction_schema,
+                ai_token_budget,
             }),
         };
         let config_json = serde_json::to_value(&config)

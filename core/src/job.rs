@@ -26,6 +26,9 @@ pub enum JobStatus {
     Processing,
     Completed,
     Failed,
+    /// Events indexed successfully but the on-chain Merkle commitment is pending
+    /// retry. Job will transition to Completed or Failed by the retry worker.
+    PendingCommit,
 }
 
 impl FromStr for JobStatus {
@@ -38,6 +41,7 @@ impl FromStr for JobStatus {
             "processing" => Ok(Self::Processing),
             "completed" => Ok(Self::Completed),
             "failed" => Ok(Self::Failed),
+            "pending_commit" => Ok(Self::PendingCommit),
             _ => Err(anyhow::anyhow!("Invalid status")),
         }
     }
@@ -51,6 +55,7 @@ impl std::fmt::Display for JobStatus {
             Self::Processing => write!(f, "processing"),
             Self::Completed => write!(f, "completed"),
             Self::Failed => write!(f, "failed"),
+            Self::PendingCommit => write!(f, "pending_commit"),
         }
     }
 }
@@ -117,6 +122,17 @@ pub struct BlockchainIndexParams {
     pub events: Vec<String>,
     pub from_block: u64,
     pub to_block: Option<u64>,
+    /// Whether to run AI extraction on each indexed event.
+    #[serde(default)]
+    pub enable_ai: bool,
+    /// JSON schema passed to the AI extractor. Required when enable_ai is true.
+    #[serde(default)]
+    pub extraction_schema: Option<serde_json::Value>,
+    /// Maximum total tokens (input + output) the AI extractor may consume
+    /// across all events in this job. Extraction stops when budget is exhausted.
+    /// Defaults to 100,000 when enable_ai is true and no budget is specified.
+    #[serde(default)]
+    pub ai_token_budget: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
