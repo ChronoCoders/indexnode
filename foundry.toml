@@ -8,9 +8,13 @@ remappings = [
 ]
 
 [rpc_endpoints]
+mainnet      = "${MAINNET_RPC_URL}"
+polygon      = "${POLYGON_MAINNET_RPC_URL}"
 sepolia      = "${SEPOLIA_RPC_URL}"
 polygon_amoy = "${POLYGON_AMOY_RPC_URL}"
 
 [etherscan]
-sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }
-polygon_amoy = { key = "${POLYGONSCAN_API_KEY}", chain = 80002, url = "https://api-amoy.polygonscan.com/api" }
+mainnet      = { key = "${ETHERSCAN_API_KEY}",   chain = 1 }
+polygon      = { key = "${POLYGONSCAN_API_KEY}",  chain = 137 }
+sepolia      = { key = "${ETHERSCAN_API_KEY}",   chain = 11155111 }
+polygon_amoy = { key = "${POLYGONSCAN_API_KEY}",  chain = 80002, url = "https://api-amoy.polygonscan.com/api" }
