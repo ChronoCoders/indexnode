@@ -93,6 +93,7 @@ cp .env.example .env
 | `SERVE_FRONTEND` | Set to `true` to serve the `frontend/` directory |
 | `CRAWL_TIMEOUT_SECS` | Crawl timeout in seconds (default: `120`) |
 | `AI_TIMEOUT_SECS` | AI extraction timeout in seconds (default: `30`) |
+| `WEBHOOK_TIMEOUT_SECS` | Per-webhook HTTP request timeout in seconds (default: `10`) |
 | `BROWSER_DISABLE_SANDBOX` | Set to `1` only in Docker environments that lack user namespaces |
 
 ### 2. Database migrations
@@ -101,17 +102,15 @@ cp .env.example .env
 sqlx migrate run
 ```
 
-Migrations live in `migrations/` and are numbered sequentially (`001` through `012`).
+Migrations live in `migrations/` and are numbered sequentially (`001` through `018`).
 
 ### 3. Run locally
 
 ```bash
-# API server
 cargo run --bin indexnode-api
-
-# Worker (separate terminal)
-cargo run --bin indexnode-worker
 ```
+
+The worker runs embedded in the same process — no separate binary needed.
 
 ### 4. Docker (production)
 
@@ -150,6 +149,12 @@ Password requirements: 12+ characters, uppercase, lowercase, digit, special char
 | `POST` | `/api/v1/jobs` | Create an HTTP crawl job |
 | `GET` | `/api/v1/jobs/:id` | Get job status |
 | `POST` | `/api/v1/verify` | Verify a content hash against on-chain commits |
+| `POST` | `/api/v1/api-keys` | Create an API key |
+| `GET` | `/api/v1/api-keys` | List API keys |
+| `DELETE` | `/api/v1/api-keys/:id` | Revoke an API key |
+| `POST` | `/api/v1/webhooks` | Register a webhook endpoint |
+| `GET` | `/api/v1/webhooks` | List webhook subscriptions |
+| `DELETE` | `/api/v1/webhooks/:id` | Delete a webhook subscription |
 | `GET` | `/metrics` | Prometheus metrics |
 
 ### GraphQL

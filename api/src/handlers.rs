@@ -345,6 +345,300 @@ pub async fn verify_hash(
     }
 }
 
+// ── API Keys ──────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct CreateApiKeyRequest {
+    pub name: String,
+    /// Validity in days. `None` means the key never expires.
+    pub expires_in_days: Option<i64>,
+}
+
+#[derive(Serialize)]
+pub struct CreateApiKeyResponse {
+    pub id: String,
+    /// Full raw key — shown **once**. Store it securely; it cannot be recovered.
+    pub key: String,
+    pub name: String,
+    pub key_prefix: String,
+    pub created_at: String,
+    pub expires_at: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct ApiKeyItem {
+    pub id: String,
+    pub name: String,
+    pub key_prefix: String,
+    pub last_used_at: Option<String>,
+    pub created_at: String,
+    pub expires_at: Option<String>,
+}
+
+/// Creates a new API key for the authenticated user.
+/// The full raw key is returned once in the response — it is not stored.
+pub async fn create_api_key(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+    Json(req): Json<CreateApiKeyRequest>,
+) -> Result<Json<CreateApiKeyResponse>, StatusCode> {
+    use rand_core::{OsRng, RngCore};
+    use sha2::{Digest, Sha256};
+
+    // Generate 32 cryptographically random bytes → hex → prepend "ink_".
+    let mut raw_bytes = [0u8; 32];
+    OsRng.fill_bytes(&mut raw_bytes);
+    let raw_key = format!("ink_{}", hex::encode(raw_bytes));
+    let key_prefix = raw_key[..12].to_string(); // "ink_" + 8 hex chars
+
+    let key_hash = hex::encode(Sha256::digest(raw_key.as_bytes()));
+
+    let expires_at = req
+        .expires_in_days
+        .map(|d| Utc::now() + chrono::Duration::days(d));
+
+    let id: Uuid = sqlx::query_scalar(
+        "INSERT INTO api_keys (user_id, name, key_hash, key_prefix, expires_at)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id",
+    )
+    .bind(user_id)
+    .bind(&req.name)
+    .bind(&key_hash)
+    .bind(&key_prefix)
+    .bind(expires_at)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to insert api_key: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    Ok(Json(CreateApiKeyResponse {
+        id: id.to_string(),
+        key: raw_key,
+        name: req.name,
+        key_prefix,
+        created_at: Utc::now().to_rfc3339(),
+        expires_at: expires_at.map(|t| t.to_rfc3339()),
+    }))
+}
+
+/// Lists all API keys belonging to the authenticated user (without raw key values).
+pub async fn list_api_keys(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+) -> Result<Json<Vec<ApiKeyItem>>, StatusCode> {
+    use sqlx::Row;
+
+    let rows = sqlx::query(
+        "SELECT id, name, key_prefix, last_used_at, created_at, expires_at
+         FROM api_keys
+         WHERE user_id = $1
+         ORDER BY created_at DESC",
+    )
+    .bind(user_id)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to list api_keys: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let keys = rows
+        .iter()
+        .map(|r| {
+            let last_used: Option<chrono::DateTime<Utc>> = r.get("last_used_at");
+            let created: chrono::DateTime<Utc> = r.get("created_at");
+            let expires: Option<chrono::DateTime<Utc>> = r.get("expires_at");
+            let id: Uuid = r.get("id");
+            ApiKeyItem {
+                id: id.to_string(),
+                name: r.get("name"),
+                key_prefix: r.get("key_prefix"),
+                last_used_at: last_used.map(|t| t.to_rfc3339()),
+                created_at: created.to_rfc3339(),
+                expires_at: expires.map(|t| t.to_rfc3339()),
+            }
+        })
+        .collect();
+
+    Ok(Json(keys))
+}
+
+/// Deletes an API key. Only the owning user may delete their own keys.
+pub async fn delete_api_key(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+    Path(id): Path<Uuid>,
+) -> StatusCode {
+    match sqlx::query(
+        "DELETE FROM api_keys WHERE id = $1 AND user_id = $2",
+    )
+    .bind(id)
+    .bind(user_id)
+    .execute(&state.pool)
+    .await
+    {
+        Ok(r) if r.rows_affected() == 1 => StatusCode::NO_CONTENT,
+        Ok(_) => StatusCode::NOT_FOUND,
+        Err(e) => {
+            tracing::error!("Failed to delete api_key: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+// ── Webhooks ──────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct CreateWebhookRequest {
+    pub url: String,
+    /// Event types to subscribe to. Defaults to ["job.completed", "job.failed"].
+    pub events: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+pub struct CreateWebhookResponse {
+    pub id: String,
+    pub url: String,
+    /// HMAC-SHA256 signing secret — shown **once**.
+    pub secret: String,
+    pub events: Vec<String>,
+    pub created_at: String,
+}
+
+#[derive(Serialize)]
+pub struct WebhookItem {
+    pub id: String,
+    pub url: String,
+    pub events: Vec<String>,
+    pub is_active: bool,
+    pub created_at: String,
+}
+
+const ALLOWED_WEBHOOK_EVENTS: &[&str] = &["job.completed", "job.failed"];
+
+/// Registers a webhook endpoint for the authenticated user.
+/// The HMAC signing secret is returned once and not stored hashed —
+/// rotate it by deleting and recreating the subscription.
+pub async fn create_webhook(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+    Json(req): Json<CreateWebhookRequest>,
+) -> Result<Json<CreateWebhookResponse>, StatusCode> {
+    use rand_core::{OsRng, RngCore};
+
+    // Validate URL.
+    InputValidator::validate_url(&req.url).map_err(|e| {
+        tracing::warn!("Invalid webhook URL: {}", e);
+        StatusCode::UNPROCESSABLE_ENTITY
+    })?;
+
+    let events = req
+        .events
+        .unwrap_or_else(|| vec!["job.completed".into(), "job.failed".into()]);
+
+    // Validate event names.
+    for event in &events {
+        if !ALLOWED_WEBHOOK_EVENTS.contains(&event.as_str()) {
+            tracing::warn!("Unknown webhook event: {}", event);
+            return Err(StatusCode::UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    // Generate HMAC secret: "whsec_" + 32 random bytes hex.
+    let mut raw_bytes = [0u8; 32];
+    OsRng.fill_bytes(&mut raw_bytes);
+    let secret = format!("whsec_{}", hex::encode(raw_bytes));
+
+    let id: Uuid = sqlx::query_scalar(
+        "INSERT INTO webhook_subscriptions (user_id, url, secret, events)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id",
+    )
+    .bind(user_id)
+    .bind(&req.url)
+    .bind(&secret)
+    .bind(&events)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to insert webhook: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    Ok(Json(CreateWebhookResponse {
+        id: id.to_string(),
+        url: req.url,
+        secret,
+        events,
+        created_at: Utc::now().to_rfc3339(),
+    }))
+}
+
+/// Lists all webhook subscriptions for the authenticated user.
+pub async fn list_webhooks(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+) -> Result<Json<Vec<WebhookItem>>, StatusCode> {
+    use sqlx::Row;
+
+    let rows = sqlx::query(
+        "SELECT id, url, events, is_active, created_at
+         FROM webhook_subscriptions
+         WHERE user_id = $1
+         ORDER BY created_at DESC",
+    )
+    .bind(user_id)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to list webhooks: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let webhooks = rows
+        .iter()
+        .map(|r| {
+            let id: Uuid = r.get("id");
+            let created: chrono::DateTime<Utc> = r.get("created_at");
+            WebhookItem {
+                id: id.to_string(),
+                url: r.get("url"),
+                events: r.get("events"),
+                is_active: r.get("is_active"),
+                created_at: created.to_rfc3339(),
+            }
+        })
+        .collect();
+
+    Ok(Json(webhooks))
+}
+
+/// Deletes a webhook subscription. Only the owning user may delete their own.
+pub async fn delete_webhook(
+    State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
+    Path(id): Path<Uuid>,
+) -> StatusCode {
+    match sqlx::query(
+        "DELETE FROM webhook_subscriptions WHERE id = $1 AND user_id = $2",
+    )
+    .bind(id)
+    .bind(user_id)
+    .execute(&state.pool)
+    .await
+    {
+        Ok(r) if r.rows_affected() == 1 => StatusCode::NO_CONTENT,
+        Ok(_) => StatusCode::NOT_FOUND,
+        Err(e) => {
+            tracing::error!("Failed to delete webhook: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
 // ── Password Reset ────────────────────────────────────────────────────────────
 
 #[derive(Deserialize)]
