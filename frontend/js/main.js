@@ -150,11 +150,3 @@ function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// OAuth button handlers (not yet implemented)
-document.querySelectorAll('.oauth-btn').forEach(button => {
-    button.addEventListener('click', function(e) {
-        e.preventDefault();
-        const provider = this.textContent.trim().includes('Google') ? 'Google' : 'GitHub';
-        showError(`${provider} sign-in is not yet available.`);
-    });
-});
