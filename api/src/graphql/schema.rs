@@ -140,7 +140,33 @@ impl Query {
         Ok(balance)
     }
 
-    /// Verifies a content hash against the blockchain.
+    /// Returns the registered wallet address and credit balance for the authenticated user.
+    async fn wallet_info(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<WalletInfo>> {
+        let pool = ctx
+            .data::<PgPool>()
+            .map_err(|_| Error::new("Failed to get database pool"))?;
+        let user_id = ctx
+            .data_opt::<Uuid>()
+            .cloned()
+            .ok_or_else(|| Error::new("Unauthorized"))?;
+
+        let row = sqlx::query(
+            "SELECT on_chain_address, credit_balance FROM user_credits WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .context("Failed to fetch wallet info")?;
+
+        use sqlx::Row;
+        Ok(row.map(|r| WalletInfo {
+            wallet_address: r.get("on_chain_address"),
+            credit_balance: r.get("credit_balance"),
+        }))
+    }
+
+    /// Verifies a content hash against the on-chain Merkle commitment.
+    /// Accepts either an individual event content_hash or a batch Merkle root.
     async fn verify_hash(
         &self,
         ctx: &Context<'_>,
@@ -150,23 +176,44 @@ impl Query {
             .data::<PgPool>()
             .map_err(|_| Error::new("Failed to get database pool"))?;
 
-        let row = sqlx::query(
-            "SELECT block_number, transaction_hash FROM timestamp_commits WHERE content_hash = $1 LIMIT 1"
+        use sqlx::Row;
+
+        // Try direct lookup — handles Merkle roots committed directly.
+        let direct = sqlx::query(
+            "SELECT block_number, transaction_hash FROM timestamp_commits WHERE content_hash = $1 LIMIT 1",
         )
-        .bind(content_hash)
+        .bind(&content_hash)
         .fetch_optional(pool)
         .await
         .context("Failed to query timestamp commits")?;
 
-        match row {
-            Some(r) => {
-                use sqlx::Row;
-                Ok(VerificationResult {
-                    verified: true,
-                    block_number: Some(r.get("block_number")),
-                    transaction_hash: Some(r.get("transaction_hash")),
-                })
-            }
+        if let Some(r) = direct {
+            return Ok(VerificationResult {
+                verified: true,
+                block_number: Some(r.get("block_number")),
+                transaction_hash: Some(r.get("transaction_hash")),
+            });
+        }
+
+        // Resolve via event → batch Merkle root → on-chain commit.
+        let via_event = sqlx::query(
+            "SELECT tc.block_number, tc.transaction_hash
+             FROM blockchain_events be
+             JOIN timestamp_commits tc ON tc.content_hash = be.merkle_root
+             WHERE be.content_hash = $1
+             LIMIT 1",
+        )
+        .bind(&content_hash)
+        .fetch_optional(pool)
+        .await
+        .context("Failed to query via event merkle root")?;
+
+        match via_event {
+            Some(r) => Ok(VerificationResult {
+                verified: true,
+                block_number: Some(r.get("block_number")),
+                transaction_hash: Some(r.get("transaction_hash")),
+            }),
             None => Ok(VerificationResult {
                 verified: false,
                 block_number: None,
@@ -458,6 +505,59 @@ impl Mutation {
             id: job_id.to_string(),
             status: "queued".to_string(),
             created_at: chrono::Utc::now().to_rfc3339(),
+        })
+    }
+
+    /// Registers or updates the Ethereum wallet address for the authenticated user.
+    /// This address is used for on-chain credit spending when indexing jobs run.
+    async fn register_wallet(
+        &self,
+        ctx: &Context<'_>,
+        wallet_address: String,
+    ) -> async_graphql::Result<WalletInfo> {
+        let pool = ctx
+            .data::<PgPool>()
+            .map_err(|_| Error::new("Failed to get database pool"))?;
+        let user_id = ctx
+            .data_opt::<Uuid>()
+            .cloned()
+            .ok_or_else(|| Error::new("Unauthorized"))?;
+
+        InputValidator::validate_ethereum_address(&wallet_address)
+            .map_err(|e| Error::new(format!("Invalid wallet address: {}", e)))?;
+
+        sqlx::query(
+            "INSERT INTO user_credits (user_id, on_chain_address, credit_balance, total_purchased, total_spent)
+             VALUES ($1, $2, 0, 0, 0)
+             ON CONFLICT (user_id) DO UPDATE SET on_chain_address = EXCLUDED.on_chain_address",
+        )
+        .bind(user_id)
+        .bind(&wallet_address)
+        .execute(pool)
+        .await
+        .context("Failed to register wallet")?;
+
+        let balance = sqlx::query_scalar::<_, i64>(
+            "SELECT credit_balance FROM user_credits WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .fetch_one(pool)
+        .await
+        .context("Failed to fetch credit balance after registration")?;
+
+        db::audit_log(
+            pool,
+            Some(user_id),
+            "register_wallet",
+            "user_credits",
+            Some(&user_id.to_string()),
+            Some(serde_json::json!({ "wallet_address": &wallet_address })),
+        )
+        .await;
+
+        Ok(WalletInfo {
+            wallet_address,
+            credit_balance: balance,
         })
     }
 

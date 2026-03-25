@@ -50,7 +50,8 @@ impl TimestampClient {
     ///
     /// # Returns
     /// The transaction hash of the commitment.
-    pub async fn commit_hash(&self, hash: &str) -> Result<H256> {
+    /// Returns `(transaction_hash, block_number)` of the on-chain commitment.
+    pub async fn commit_hash(&self, hash: &str) -> Result<(H256, u64)> {
         let hash_bytes = hash.parse::<H256>().context("Invalid hash format")?;
 
         let call = self.contract.commit_hash(hash_bytes.0);
@@ -64,7 +65,12 @@ impl TimestampClient {
             .context("Failed to await transaction confirmation")?
             .context("Transaction was not mined")?;
 
-        Ok(receipt.transaction_hash)
+        let block_number = receipt
+            .block_number
+            .context("Missing block number in receipt")?
+            .as_u64();
+
+        Ok((receipt.transaction_hash, block_number))
     }
 
     /// Verifies if a content hash has been committed and returns its block number.

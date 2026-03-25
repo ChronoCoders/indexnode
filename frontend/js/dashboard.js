@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mainContent').classList.remove('hidden');
 
     loadStats();
+    setupWalletSection();
     setupCreateJobForm();
     setupContractSearch();
     setupLogout();
@@ -60,6 +61,63 @@ async function loadStats() {
 function setStat(key, value) {
     const el = document.querySelector(`[data-stat="${key}"]`);
     if (el) el.textContent = value;
+}
+
+// ── Wallet Section ───────────────────────────────────────────────────────────
+
+async function setupWalletSection() {
+    // Load existing wallet if any.
+    try {
+        const data = await gql(`{ walletInfo { walletAddress creditBalance } }`);
+        if (data.walletInfo) {
+            showRegisteredWallet(data.walletInfo.walletAddress);
+        }
+    } catch (err) {
+        console.error('Failed to load wallet info:', err);
+    }
+
+    const form = document.getElementById('walletForm');
+    const feedback = document.getElementById('walletFeedback');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const addr = document.getElementById('walletInput').value.trim();
+        if (!addr) return;
+
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Registering…';
+        clearFeedback(feedback);
+
+        try {
+            const data = await gql(`
+                mutation RegisterWallet($addr: String!) {
+                    registerWallet(walletAddress: $addr) { walletAddress creditBalance }
+                }
+            `, { addr });
+            showRegisteredWallet(data.registerWallet.walletAddress);
+            showFeedback(feedback, 'success', 'Wallet registered successfully.');
+            form.reset();
+        } catch (err) {
+            showFeedback(feedback, 'error', `Registration failed: ${err.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Register Wallet';
+        }
+    });
+}
+
+function showRegisteredWallet(address) {
+    const statusEl = document.getElementById('walletStatus');
+    const addrEl = document.getElementById('walletAddress');
+    if (statusEl && addrEl) {
+        addrEl.textContent = address.slice(0, 10) + '…' + address.slice(-8);
+        addrEl.title = address;
+        statusEl.classList.remove('hidden');
+    }
+    const input = document.getElementById('walletInput');
+    if (input) input.placeholder = address;
 }
 
 // ── Create Job Form ──────────────────────────────────────────────────────────

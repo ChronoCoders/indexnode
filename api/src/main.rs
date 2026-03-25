@@ -7,9 +7,10 @@ use axum::{serve, Router as AxumRouter};
 use chrono::Utc;
 use ethers::types::Address;
 use indexnode_core::{
-    hash_content, AIExtractor, BlockchainClient, Coordinator, Crawler, CreditManager,
-    DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig, JobParams, JobQueue, JobStatus,
-    MarketplaceClient, Worker as DistributedWorker, WorkerConfig as DistributedWorkerConfig,
+    compute_merkle_root, hash_content, AIExtractor, BlockchainClient, Coordinator, Crawler,
+    CreditManager, DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig, JobParams,
+    JobQueue, JobStatus, MarketplaceClient, TimestampClient,
+    Worker as DistributedWorker, WorkerConfig as DistributedWorkerConfig,
 };
 use std::collections::HashMap;
 use sqlx::postgres::PgPoolOptions;
@@ -96,6 +97,30 @@ async fn main() -> Result<()> {
         tracing::warn!("ANTHROPIC_API_KEY not set — AI extraction disabled");
     }
 
+    let timestamp_registry_addr = env::var("TIMESTAMP_REGISTRY_ADDRESS")
+        .ok()
+        .and_then(|s| s.parse::<Address>().ok());
+    let timestamp_client_worker = match timestamp_registry_addr {
+        Some(addr) => {
+            match TimestampClient::new(&rpc_url, addr, &credit_private_key).await {
+                Ok(client) => {
+                    tracing::info!("TimestampRegistry client initialized — on-chain Merkle commitments enabled");
+                    Some(client)
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to init TimestampClient: {:?}", e);
+                    None
+                }
+            }
+        }
+        None => {
+            tracing::warn!(
+                "TIMESTAMP_REGISTRY_ADDRESS not set — on-chain Merkle commitments disabled"
+            );
+            None
+        }
+    };
+
     // Shutdown signal shared between the server and the worker thread.
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 
@@ -116,6 +141,7 @@ async fn main() -> Result<()> {
                             if let Err(e) = run_worker(
                                 worker_pool,
                                 credit_manager_worker,
+                                timestamp_client_worker,
                                 ai_extractor_worker,
                                 worker_shutdown_rx,
                             )
@@ -314,6 +340,7 @@ async fn get_queue_depth(pool: &sqlx::PgPool) -> Result<i64> {
 async fn run_worker(
     pool: sqlx::PgPool,
     credit_manager: CreditManager,
+    timestamp_client: Option<TimestampClient>,
     ai: Option<AIExtractor>,
     mut shutdown: tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
@@ -488,6 +515,7 @@ async fn run_worker(
                         match process_blockchain_index(
                             &chain_clients,
                             &ipfs_storage,
+                            timestamp_client.as_ref(),
                             &credit_manager,
                             ai.as_ref(),
                             &pool,
@@ -540,6 +568,7 @@ async fn run_worker(
 async fn process_blockchain_index(
     chain_clients: &HashMap<String, BlockchainClient>,
     ipfs: &IpfsStorage,
+    timestamp_client: Option<&TimestampClient>,
     credit_manager: &CreditManager,
     ai: Option<&AIExtractor>,
     pool: &sqlx::PgPool,
@@ -552,6 +581,10 @@ async fn process_blockchain_index(
         JobParams::BlockchainIndex(p) => p,
         _ => anyhow::bail!("Expected BlockchainIndex params for this job"),
     };
+
+    if params.events.is_empty() {
+        anyhow::bail!("No event signatures specified in job config");
+    }
 
     let client = chain_clients.get(&params.chain).ok_or_else(|| {
         anyhow::anyhow!(
@@ -596,24 +629,59 @@ async fn process_blockchain_index(
         }
     }
 
-    let filter = EventFilter {
-        chain: params.chain.clone(),
-        contract_address: params.contract_address.parse().context("Invalid address")?,
-        event_signature: params
-            .events
-            .first()
-            .cloned()
-            .context("No events specified")?,
-        from_block: params.from_block,
-        to_block: params.to_block.unwrap_or(client.get_latest_block().await?),
+    let contract_address: Address = params
+        .contract_address
+        .parse()
+        .context("Invalid contract address")?;
+    let to_block = params
+        .to_block
+        .unwrap_or(client.get_latest_block().await?);
+
+    // Fetch events for every requested event signature.
+    let mut all_events = Vec::new();
+    for event_sig in &params.events {
+        let filter = EventFilter {
+            chain: params.chain.clone(),
+            contract_address,
+            event_signature: event_sig.clone(),
+            from_block: params.from_block,
+            to_block,
+        };
+        match client.get_events(filter).await {
+            Ok(events) => all_events.extend(events),
+            Err(e) => tracing::warn!(
+                "Job {}: failed to fetch events for '{}': {:?}",
+                job.id,
+                event_sig,
+                e
+            ),
+        }
+    }
+
+    let mut all_content_hashes: Vec<String> = Vec::new();
+    let mut indexed_event_ids: Vec<uuid::Uuid> = Vec::new();
+
+    let enable_ai: bool =
+        sqlx::query_scalar::<_, bool>("SELECT enable_ai_extraction FROM jobs WHERE id = $1")
+            .bind(job.id)
+            .fetch_one(pool)
+            .await
+            .unwrap_or(false);
+
+    let extraction_schema: Option<serde_json::Value> = if enable_ai {
+        sqlx::query_scalar::<_, Option<serde_json::Value>>(
+            "SELECT extraction_schema FROM jobs WHERE id = $1",
+        )
+        .bind(job.id)
+        .fetch_one(pool)
+        .await
+        .unwrap_or(None)
+    } else {
+        None
     };
 
-    let events = client.get_events(filter).await?;
-
-    for mut event in events {
+    for mut event in all_events {
         let event_id = uuid::Uuid::new_v4();
-        // content_hash is now computed in BlockchainClient::get_events; refresh
-        // it here to include the full serialized event for post-indexing integrity.
         event.content_hash = hash_content(format!("{:?}", event.event_data).as_bytes());
         let event_json = serde_json::to_vec(&event).context("Failed to serialize event")?;
         let ipfs_cid = ipfs.store_content(&event_json).await?;
@@ -625,7 +693,7 @@ async fn process_blockchain_index(
 
         sqlx::query(
             "INSERT INTO blockchain_events (id, job_id, chain, contract_address, event_name, block_number, transaction_hash, event_data, content_hash, ipfs_cid)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         )
         .bind(event_id)
         .bind(job.id)
@@ -652,25 +720,9 @@ async fn process_blockchain_index(
         .execute(pool)
         .await?;
 
-        let enable_ai: bool =
-            sqlx::query_scalar::<_, bool>("SELECT enable_ai_extraction FROM jobs WHERE id = $1")
-                .bind(job.id)
-                .fetch_one(pool)
-                .await
-                .unwrap_or(false);
-
         if enable_ai {
-            let extraction_schema: Option<serde_json::Value> =
-                sqlx::query_scalar::<_, Option<serde_json::Value>>(
-                    "SELECT extraction_schema FROM jobs WHERE id = $1",
-                )
-                .bind(job.id)
-                .fetch_one(pool)
-                .await
-                .unwrap_or(None);
-
-            if let (Some(schema), Some(ai)) = (extraction_schema, ai) {
-                let schema_str = serde_json::to_string(&schema)?;
+            if let (Some(schema), Some(ai)) = (&extraction_schema, ai) {
+                let schema_str = serde_json::to_string(schema)?;
                 let event_str = serde_json::to_string(&event.event_data)?;
 
                 let extracted = tokio::time::timeout(
@@ -684,13 +736,90 @@ async fn process_blockchain_index(
 
                 sqlx::query(
                     "INSERT INTO ai_extractions (blockchain_event_id, extraction_type, schema_definition, extracted_data)
-                     VALUES ($1, 'structured', $2, $3)"
+                     VALUES ($1, 'structured', $2, $3)",
                 )
                 .bind(event_id)
                 .bind(schema)
                 .bind(extracted)
                 .execute(pool)
                 .await?;
+            }
+        }
+
+        all_content_hashes.push(event.content_hash.clone());
+        indexed_event_ids.push(event_id);
+    }
+
+    // Compute and commit the batch Merkle root on-chain.
+    if !all_content_hashes.is_empty() {
+        let merkle_root = compute_merkle_root(&all_content_hashes);
+
+        match timestamp_client {
+            Some(ts) => match ts.commit_hash(&merkle_root).await {
+                Ok((tx_hash, block_number)) => {
+                    let tx_hash_str = format!("{:?}", tx_hash);
+
+                    if let Err(e) = sqlx::query(
+                        "INSERT INTO timestamp_commits (content_hash, transaction_hash, block_number, chain, job_id)
+                         VALUES ($1, $2, $3, $4, $5)
+                         ON CONFLICT (content_hash) DO NOTHING",
+                    )
+                    .bind(&merkle_root)
+                    .bind(&tx_hash_str)
+                    .bind(block_number as i64)
+                    .bind(&params.chain)
+                    .bind(job.id)
+                    .execute(pool)
+                    .await
+                    {
+                        tracing::error!(
+                            "Job {}: failed to store timestamp commit: {:?}",
+                            job.id,
+                            e
+                        );
+                    }
+
+                    for event_id in &indexed_event_ids {
+                        if let Err(e) = sqlx::query(
+                            "UPDATE blockchain_events SET merkle_root = $1 WHERE id = $2",
+                        )
+                        .bind(&merkle_root)
+                        .bind(event_id)
+                        .execute(pool)
+                        .await
+                        {
+                            tracing::error!(
+                                "Job {}: failed to set merkle_root on event {}: {:?}",
+                                job.id,
+                                event_id,
+                                e
+                            );
+                        }
+                    }
+
+                    tracing::info!(
+                        "Job {}: committed Merkle root {} in tx {} at block {}",
+                        job.id,
+                        merkle_root,
+                        tx_hash_str,
+                        block_number
+                    );
+                }
+                Err(e) => {
+                    // Log but don't fail the job — indexing succeeded.
+                    tracing::error!(
+                        "Job {}: on-chain Merkle commitment failed (events are indexed): {:?}",
+                        job.id,
+                        e
+                    );
+                }
+            },
+            None => {
+                tracing::warn!(
+                    "Job {}: TimestampClient not configured — Merkle root {} not committed on-chain",
+                    job.id,
+                    merkle_root
+                );
             }
         }
     }
