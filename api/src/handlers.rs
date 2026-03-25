@@ -273,41 +273,75 @@ pub struct VerifyHashResponse {
     pub committed_at: Option<String>,
 }
 
-/// Verifies a content hash against the local database of on-chain commitments.
+/// Verifies a content hash against on-chain Merkle commitments.
+///
+/// Two-pass lookup:
+///   1. Direct match — the hash is itself a committed Merkle root.
+///   2. Indirect match — the hash belongs to an event whose batch Merkle root
+///      was committed; returns the commitment for that root.
 pub async fn verify_hash(
     State(state): State<AppState>,
     Json(req): Json<VerifyHashRequest>,
 ) -> Result<Json<VerifyHashResponse>, StatusCode> {
-    let record = sqlx::query(
-        "SELECT transaction_hash, block_number, committed_at FROM timestamp_commits WHERE content_hash = $1",
+    use sqlx::Row;
+
+    // Pass 1: direct match against committed Merkle roots.
+    let direct = sqlx::query(
+        "SELECT transaction_hash, block_number, committed_at
+         FROM timestamp_commits
+         WHERE content_hash = $1
+         LIMIT 1",
     )
     .bind(&req.content_hash)
     .fetch_optional(&state.pool)
     .await
     .map_err(|e| {
-        tracing::error!("Database query error during verification: {:?}", e);
+        tracing::error!("verify_hash pass-1 query error: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    if let Some(r) = record {
-        use sqlx::Row;
-        let transaction_hash: String = r.get("transaction_hash");
-        let block_number: i64 = r.get("block_number");
+    if let Some(r) = direct {
         let committed_at: chrono::DateTime<chrono::Utc> = r.get("committed_at");
-
-        Ok(Json(VerifyHashResponse {
+        return Ok(Json(VerifyHashResponse {
             verified: true,
-            block_number: Some(block_number),
-            transaction_hash: Some(transaction_hash),
+            block_number: Some(r.get("block_number")),
+            transaction_hash: Some(r.get("transaction_hash")),
             committed_at: Some(committed_at.to_rfc3339()),
-        }))
-    } else {
-        Ok(Json(VerifyHashResponse {
+        }));
+    }
+
+    // Pass 2: resolve via event → batch Merkle root → timestamp_commit.
+    let via_event = sqlx::query(
+        "SELECT tc.transaction_hash, tc.block_number, tc.committed_at
+         FROM blockchain_events be
+         JOIN timestamp_commits tc ON tc.content_hash = be.merkle_root
+         WHERE be.content_hash = $1
+         LIMIT 1",
+    )
+    .bind(&req.content_hash)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("verify_hash pass-2 query error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    match via_event {
+        Some(r) => {
+            let committed_at: chrono::DateTime<chrono::Utc> = r.get("committed_at");
+            Ok(Json(VerifyHashResponse {
+                verified: true,
+                block_number: Some(r.get("block_number")),
+                transaction_hash: Some(r.get("transaction_hash")),
+                committed_at: Some(committed_at.to_rfc3339()),
+            }))
+        }
+        None => Ok(Json(VerifyHashResponse {
             verified: false,
             block_number: None,
             transaction_hash: None,
             committed_at: None,
-        }))
+        })),
     }
 }
 
