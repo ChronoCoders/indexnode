@@ -18,6 +18,8 @@ pub fn create_public_routes(pool: PgPool) -> Router {
         .route("/health", get(handlers::health_check))
         .route("/api/v1/auth/register", post(handlers::register))
         .route("/api/v1/auth/login", post(handlers::login))
+        .route("/api/v1/auth/forgot-password", post(handlers::forgot_password))
+        .route("/api/v1/auth/reset-password", post(handlers::reset_password))
         .with_state(state)
 }
 
