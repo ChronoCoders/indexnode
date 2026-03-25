@@ -45,9 +45,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 
-function loadProfile() {
-    const el = document.getElementById('profileUserId');
-    if (el) el.textContent = window.auth.getUserId() ?? '—';
+async function loadProfile() {
+    const userIdEl = document.getElementById('profileUserId');
+    if (userIdEl) userIdEl.textContent = window.auth.getUserId() ?? '—';
+
+    try {
+        const me = await api('GET', '/api/v1/me');
+        const emailEl = document.getElementById('profileEmail');
+        const roleEl  = document.getElementById('profileRole');
+        const sinceEl = document.getElementById('profileSince');
+        if (emailEl) emailEl.textContent = me.email;
+        if (roleEl)  roleEl.textContent  = me.role;
+        if (sinceEl) sinceEl.textContent = formatDate(me.created_at);
+        if (userIdEl) userIdEl.textContent = me.user_id;
+    } catch (err) {
+        console.error('Failed to load profile:', err);
+    }
 }
 
 // ── API Keys ──────────────────────────────────────────────────────────────────

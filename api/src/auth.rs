@@ -55,12 +55,20 @@ fn jwt_secret() -> Result<String> {
     std::env::var("JWT_SECRET").context("JWT_SECRET environment variable must be set")
 }
 
-/// Creates a signed JWT for the given user. `role` is the user's role string (e.g. "user", "admin").
-pub fn create_token(user_id: Uuid, role: &str) -> Result<String> {
+/// Creates a signed JWT for the given user.
+/// `role` is the user's role string (e.g. "user", "admin").
+/// `remember_me` extends the expiry from 24 hours to 30 days.
+pub fn create_token(user_id: Uuid, role: &str, remember_me: bool) -> Result<String> {
     let secret = jwt_secret()?;
 
+    let ttl = if remember_me {
+        Duration::days(30)
+    } else {
+        Duration::hours(24)
+    };
+
     let expiration = Utc::now()
-        .checked_add_signed(Duration::hours(24))
+        .checked_add_signed(ttl)
         .context("Failed to calculate token expiration")?
         .timestamp();
 
