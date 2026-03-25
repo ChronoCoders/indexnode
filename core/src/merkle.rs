@@ -7,6 +7,28 @@ pub fn hash_content(data: &[u8]) -> String {
     hex::encode(hasher.finalize())
 }
 
+/// Computes the Merkle root of a set of leaves.
+///
+/// Returns a deterministic root hash. An empty leaf set returns the hash of an
+/// empty byte slice so the return type is always a valid hex-encoded SHA-256.
+pub fn compute_merkle_root(leaves: &[String]) -> String {
+    if leaves.is_empty() {
+        return hash_content(b"");
+    }
+    let mut current = leaves.to_vec();
+    while current.len() > 1 {
+        if !current.len().is_multiple_of(2) {
+            let last = current.last().cloned().unwrap();
+            current.push(last);
+        }
+        current = current
+            .chunks(2)
+            .map(|pair| hash_content(format!("{}{}", pair[0], pair[1]).as_bytes()))
+            .collect();
+    }
+    current.remove(0)
+}
+
 /// Generates a Merkle proof for a leaf at the specified index.
 ///
 /// Returns a vector of hashes representing the proof path.

@@ -25,6 +25,6 @@ pub use job::{
     JobType,
 };
 pub use marketplace::MarketplaceClient;
-pub use merkle::{generate_merkle_proof, hash_content, verify_merkle_proof};
+pub use merkle::{compute_merkle_root, generate_merkle_proof, hash_content, verify_merkle_proof};
 pub use queue::JobQueue;
 pub use timestamp::TimestampClient;
