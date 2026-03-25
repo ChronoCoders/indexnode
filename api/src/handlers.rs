@@ -703,7 +703,7 @@ pub async fn forgot_password(
     }
 
     // Send email via Resend (optional — logs warning if key not configured).
-    if let Some(resend_key) = std::env::var("RESEND_API_KEY").ok() {
+    if let Ok(resend_key) = std::env::var("RESEND_API_KEY") {
         let base_url = std::env::var("BASE_URL")
             .unwrap_or_else(|_| "https://indexnode.io".to_string());
         let reset_url = format!("{}/reset-password.html?token={}", base_url, token);

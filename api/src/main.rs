@@ -337,6 +337,17 @@ async fn get_queue_depth(pool: &sqlx::PgPool) -> Result<i64> {
     Ok(count)
 }
 
+/// Stateful service handles passed into `process_blockchain_index`.
+/// Grouping them avoids exceeding Clippy's `too_many_arguments` limit (7).
+struct IndexerServices<'a> {
+    chain_clients: &'a HashMap<String, BlockchainClient>,
+    ipfs: &'a IpfsStorage,
+    timestamp_client: Option<&'a TimestampClient>,
+    credit_manager: &'a CreditManager,
+    ai: Option<&'a AIExtractor>,
+    ai_timeout: Duration,
+}
+
 async fn run_worker(
     pool: sqlx::PgPool,
     credit_manager: CreditManager,
@@ -382,6 +393,15 @@ async fn run_worker(
             .and_then(|v| v.parse().ok())
             .unwrap_or(30),
     );
+
+    let svc = IndexerServices {
+        chain_clients: &chain_clients,
+        ipfs: &ipfs_storage,
+        timestamp_client: timestamp_client.as_ref(),
+        credit_manager: &credit_manager,
+        ai: ai.as_ref(),
+        ai_timeout,
+    };
 
     tracing::info!("Worker started");
 
@@ -519,16 +539,7 @@ async fn run_worker(
                         }
                     }
                     JobParams::BlockchainIndex(_) => {
-                        match process_blockchain_index(
-                            &chain_clients,
-                            &ipfs_storage,
-                            timestamp_client.as_ref(),
-                            &credit_manager,
-                            ai.as_ref(),
-                            &pool,
-                            &job,
-                            ai_timeout,
-                        )
+                        match process_blockchain_index(&svc, &pool, &job)
                         .await
                         {
                             Ok(IndexResult::Completed) => {
@@ -758,15 +769,17 @@ async fn retry_pending_commits(
 }
 
 async fn process_blockchain_index(
-    chain_clients: &HashMap<String, BlockchainClient>,
-    ipfs: &IpfsStorage,
-    timestamp_client: Option<&TimestampClient>,
-    credit_manager: &CreditManager,
-    ai: Option<&AIExtractor>,
+    svc: &IndexerServices<'_>,
     pool: &sqlx::PgPool,
     job: &Job,
-    ai_timeout: Duration,
 ) -> Result<IndexResult> {
+    let chain_clients    = svc.chain_clients;
+    let ipfs             = svc.ipfs;
+    let timestamp_client = svc.timestamp_client;
+    let credit_manager   = svc.credit_manager;
+    let ai               = svc.ai;
+    let ai_timeout       = svc.ai_timeout;
+
     let config: JobConfig =
         serde_json::from_value(job.config.clone()).context("Failed to parse job config")?;
     let params = match config.params {
