@@ -6,7 +6,8 @@ use crate::{
 };
 use axum::{
     extract::{Extension, Path, State},
-    http::StatusCode,
+    http::{header, HeaderMap, StatusCode},
+    response::IntoResponse,
     Json,
 };
 use chrono::Utc;
@@ -43,7 +44,7 @@ pub struct AuthResponse {
 pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<RegisterRequest>,
-) -> Result<Json<AuthResponse>, StatusCode> {
+) -> Result<impl IntoResponse, StatusCode> {
     // Validate password strength before hashing.
     SecurityConfig::default()
         .validate_password(&req.password)
@@ -87,10 +88,11 @@ pub async fn register(
     )
     .await;
 
-    Ok(Json(AuthResponse {
+    let headers = auth_cookie_headers(&token, false);
+    Ok((headers, Json(AuthResponse {
         token,
         user_id: user_id.to_string(),
-    }))
+    })).into_response())
 }
 
 #[derive(Deserialize)]
@@ -104,7 +106,7 @@ pub struct LoginRequest {
 pub async fn login(
     State(state): State<AppState>,
     Json(req): Json<LoginRequest>,
-) -> Result<Json<AuthResponse>, StatusCode> {
+) -> Result<impl IntoResponse, StatusCode> {
     let user = sqlx::query_as::<_, User>(
         "SELECT id, email, password_hash, role, created_at FROM users WHERE email = $1",
     )
@@ -150,10 +152,55 @@ pub async fn login(
     )
     .await;
 
-    Ok(Json(AuthResponse {
+    let headers = auth_cookie_headers(&token, req.remember_me);
+    Ok((headers, Json(AuthResponse {
         token,
         user_id: user.id.to_string(),
-    }))
+    })).into_response())
+}
+
+/// Clears auth cookies for the current session.
+pub async fn logout() -> impl IntoResponse {
+    let mut headers = HeaderMap::new();
+    headers.append(header::SET_COOKIE, clear_cookie("auth_token"));
+    headers.append(header::SET_COOKIE, clear_cookie("auth_present"));
+    (headers, StatusCode::NO_CONTENT)
+}
+
+fn auth_cookie_headers(token: &str, remember_me: bool) -> HeaderMap {
+    let mut headers = HeaderMap::new();
+    let max_age = if remember_me { 60 * 60 * 24 * 30 } else { 60 * 60 * 24 };
+    headers.append(
+        header::SET_COOKIE,
+        build_cookie("auth_token", token, true, max_age),
+    );
+    headers.append(
+        header::SET_COOKIE,
+        build_cookie("auth_present", "1", false, max_age),
+    );
+    headers
+}
+
+fn build_cookie(name: &str, value: &str, http_only: bool, max_age: i64) -> header::HeaderValue {
+    let secure = std::env::var("COOKIE_SECURE")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    let mut cookie = format!(
+        "{}={}; Path=/; SameSite=Lax; Max-Age={}",
+        name, value, max_age
+    );
+    if http_only {
+        cookie.push_str("; HttpOnly");
+    }
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    header::HeaderValue::from_str(&cookie).unwrap_or_else(|_| header::HeaderValue::from_static(""))
+}
+
+fn clear_cookie(name: &str) -> header::HeaderValue {
+    let cookie = format!("{}=; Path=/; SameSite=Lax; Max-Age=0", name);
+    header::HeaderValue::from_str(&cookie).unwrap_or_else(|_| header::HeaderValue::from_static(""))
 }
 
 #[derive(Deserialize)]
@@ -174,17 +221,14 @@ pub async fn create_job(
     Extension(user_id): Extension<Uuid>,
     Json(req): Json<CreateJobRequest>,
 ) -> Result<Json<JobResponse>, StatusCode> {
-    let job_id = Uuid::new_v4();
-
-    // Validate and convert raw params JSON into typed JobParams at the API boundary.
+    // Validate params before opening a transaction.
     let typed_params: JobParams = match req.job_type {
         JobType::HttpCrawl => {
             let p: HttpCrawlParams = serde_json::from_value(req.params).map_err(|e| {
                 tracing::warn!("Invalid HttpCrawl params: {}", e);
                 StatusCode::UNPROCESSABLE_ENTITY
             })?;
-            // Validate the URL at the boundary.
-            InputValidator::validate_url(&p.url).map_err(|e| {
+            InputValidator::validate_url(&p.url).await.map_err(|e| {
                 tracing::warn!("Invalid crawl URL: {}", e);
                 StatusCode::UNPROCESSABLE_ENTITY
             })?;
@@ -203,24 +247,51 @@ pub async fn create_job(
     })
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let job = Job {
-        id: job_id,
-        user_id,
-        status: JobStatus::Queued,
-        priority: 50,
-        config: config_value,
-        created_at: Utc::now(),
-        scheduled_at: None,
-        started_at: None,
-        completed_at: None,
-        retry_count: 0,
-        error: None,
-        result_summary: None,
-    };
+    let job_id = Uuid::new_v4();
 
-    let queue = JobQueue::new(state.pool.clone());
-    queue.enqueue(job).await.map_err(|e| {
-        tracing::error!("Job enqueue error: {:?}", e);
+    // Atomically decrement credits and insert the job in one transaction.
+    // The UPDATE only succeeds if the balance is sufficient, preventing
+    // concurrent requests from double-spending credits.
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        tracing::error!("Failed to begin transaction: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    let rows_affected = sqlx::query(
+        "UPDATE user_credits SET credit_balance = credit_balance - 50
+         WHERE user_id = $1 AND credit_balance >= 50",
+    )
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| {
+        tracing::error!("Credit decrement error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(StatusCode::PAYMENT_REQUIRED);
+    }
+
+    sqlx::query(
+        "INSERT INTO jobs (id, user_id, status, priority, config, created_at)
+         VALUES ($1, $2, 'queued', $3, $4, $5)",
+    )
+    .bind(job_id)
+    .bind(user_id)
+    .bind(50i32)
+    .bind(&config_value)
+    .bind(Utc::now())
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| {
+        tracing::error!("Job insert error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tx.commit().await.map_err(|e| {
+        tracing::error!("Transaction commit error: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
@@ -242,11 +313,14 @@ pub async fn create_job(
 
 pub async fn get_job(
     State(state): State<AppState>,
+    Extension(user_id): Extension<Uuid>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<JobResponse>, StatusCode> {
-    let queue = JobQueue::new(state.pool.clone());
-    let job = queue
-        .get_job(id)
+    use sqlx::Row;
+    let row = sqlx::query("SELECT id, status FROM jobs WHERE id = $1 AND user_id = $2")
+        .bind(id)
+        .bind(user_id)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| {
             tracing::error!("Job fetch error: {:?}", e);
@@ -255,8 +329,8 @@ pub async fn get_job(
         .ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(JobResponse {
-        id: job.id.to_string(),
-        status: job.status.to_string(),
+        id: row.get::<Uuid, _>("id").to_string(),
+        status: row.get("status"),
     }))
 }
 
@@ -509,13 +583,11 @@ pub async fn delete_api_key(
     Extension(user_id): Extension<Uuid>,
     Path(id): Path<Uuid>,
 ) -> StatusCode {
-    match sqlx::query(
-        "DELETE FROM api_keys WHERE id = $1 AND user_id = $2",
-    )
-    .bind(id)
-    .bind(user_id)
-    .execute(&state.pool)
-    .await
+    match sqlx::query("DELETE FROM api_keys WHERE id = $1 AND user_id = $2")
+        .bind(id)
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
     {
         Ok(r) if r.rows_affected() == 1 => StatusCode::NO_CONTENT,
         Ok(_) => StatusCode::NOT_FOUND,
@@ -567,7 +639,7 @@ pub async fn create_webhook(
     use rand_core::{OsRng, RngCore};
 
     // Validate URL.
-    InputValidator::validate_url(&req.url).map_err(|e| {
+    InputValidator::validate_url(&req.url).await.map_err(|e| {
         tracing::warn!("Invalid webhook URL: {}", e);
         StatusCode::UNPROCESSABLE_ENTITY
     })?;
@@ -659,13 +731,11 @@ pub async fn delete_webhook(
     Extension(user_id): Extension<Uuid>,
     Path(id): Path<Uuid>,
 ) -> StatusCode {
-    match sqlx::query(
-        "DELETE FROM webhook_subscriptions WHERE id = $1 AND user_id = $2",
-    )
-    .bind(id)
-    .bind(user_id)
-    .execute(&state.pool)
-    .await
+    match sqlx::query("DELETE FROM webhook_subscriptions WHERE id = $1 AND user_id = $2")
+        .bind(id)
+        .bind(user_id)
+        .execute(&state.pool)
+        .await
     {
         Ok(r) if r.rows_affected() == 1 => StatusCode::NO_CONTENT,
         Ok(_) => StatusCode::NOT_FOUND,
@@ -741,8 +811,8 @@ pub async fn forgot_password(
 
     // Send email via Resend (optional — logs warning if key not configured).
     if let Ok(resend_key) = std::env::var("RESEND_API_KEY") {
-        let base_url = std::env::var("BASE_URL")
-            .unwrap_or_else(|_| "https://indexnode.io".to_string());
+        let base_url =
+            std::env::var("BASE_URL").unwrap_or_else(|_| "https://indexnode.io".to_string());
         let reset_url = format!("{}/reset-password.html?token={}", base_url, token);
 
         let body = serde_json::json!({
@@ -777,10 +847,7 @@ pub async fn forgot_password(
             }
         }
     } else {
-        tracing::warn!(
-            "RESEND_API_KEY not set — password reset email not sent. Token (dev only): {}",
-            token
-        );
+        tracing::warn!("RESEND_API_KEY not set — password reset email not sent.");
     }
 
     StatusCode::OK

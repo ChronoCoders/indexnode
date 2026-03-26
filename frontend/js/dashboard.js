@@ -2,15 +2,21 @@ const GRAPHQL_URL = '/graphql';
 
 // Send a GraphQL request with the stored JWT.
 async function gql(query, variables = {}) {
-    const token = window.auth.getToken();
     const res = await fetch(GRAPHQL_URL, {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ query, variables }),
     });
+    if (!res.ok) {
+        if (res.status === 401) {
+            window.auth.logout();
+            throw new Error('Session expired. Please log in again.');
+        }
+        throw new Error(`HTTP ${res.status}`);
+    }
     const json = await res.json();
     if (json.errors) throw new Error(json.errors[0].message);
     return json.data;
@@ -33,29 +39,32 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('mainContent').classList.remove('hidden');
 
-    loadStats();
+    resetEventStats();
     setupWalletSection();
     setupCreateJobForm();
     setupContractSearch();
     setupLogout();
 });
 
-// ── Stats ────────────────────────────────────────────────────────────────────
+// ── Snapshot Stats ───────────────────────────────────────────────────────────
 
-async function loadStats() {
-    try {
-        const data = await gql(`{
-            creditBalance
-            rateLimitStatus { tier quota used remaining }
-        }`);
+function resetEventStats() {
+    setStat('events-total', '—');
+    setStat('events-verified', '—');
+    setStat('events-ipfs', '—');
+    setStat('events-latest-block', '—');
+}
 
-        setStat('credits', data.creditBalance.toLocaleString('en-US'));
-        setStat('quota-used', data.rateLimitStatus.used.toLocaleString('en-US'));
-        setStat('quota-remaining', data.rateLimitStatus.remaining.toLocaleString('en-US'));
-        setStat('tier', data.rateLimitStatus.tier);
-    } catch (err) {
-        console.error('Failed to load stats:', err);
-    }
+function updateEventStats(events) {
+    const total = events.length;
+    const verified = events.filter(e => e.contentHash).length;
+    const withIpfs = events.filter(e => e.ipfsCid).length;
+    const latestBlock = total ? events[0].blockNumber : null;
+
+    setStat('events-total', total.toLocaleString('en-US'));
+    setStat('events-verified', verified.toLocaleString('en-US'));
+    setStat('events-ipfs', withIpfs.toLocaleString('en-US'));
+    setStat('events-latest-block', latestBlock ? latestBlock.toLocaleString('en-US') : '—');
 }
 
 function setStat(key, value) {
@@ -217,29 +226,66 @@ async function loadEvents(contractAddress) {
 
         if (events.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No events found for this contract.</td></tr>`;
+            updateEventStats([]);
             return;
         }
 
-        tbody.innerHTML = events.map(ev => {
-            const short = addr => addr.slice(0, 8) + '…' + addr.slice(-6);
-            const verified = ev.contentHash
-                ? `<span class="inline-flex items-center text-xs text-green-400">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>Verified</span>`
-                : `<span class="text-xs text-gray-500">Pending</span>`;
+        updateEventStats(events);
+        tbody.innerHTML = '';
+        const short = addr => {
+            const a = String(addr ?? '');
+            return a.slice(0, 8) + '…' + a.slice(-6);
+        };
+        for (const ev of events) {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-800/50';
 
-            return `<tr class="hover:bg-gray-800/50">
-                <td class="px-6 py-4 font-mono text-xs text-gray-300">${short(ev.contractAddress)}</td>
-                <td class="px-6 py-4">${ev.eventName}</td>
-                <td class="px-6 py-4 text-gray-400">${ev.blockNumber}</td>
-                <td class="px-6 py-4 font-mono text-xs text-gray-400">${short(ev.transactionHash)}</td>
-                <td class="px-6 py-4">${verified}</td>
-                <td class="px-6 py-4 text-xs text-gray-500">${ev.ipfsCid ? ev.ipfsCid.slice(0, 12) + '…' : '—'}</td>
-            </tr>`;
-        }).join('');
+            const tdContract = document.createElement('td');
+            tdContract.className = 'px-6 py-4 font-mono text-xs text-gray-300';
+            tdContract.textContent = short(ev.contractAddress);
+
+            const tdEvent = document.createElement('td');
+            tdEvent.className = 'px-6 py-4';
+            tdEvent.textContent = ev.eventName;
+
+            const tdBlock = document.createElement('td');
+            tdBlock.className = 'px-6 py-4 text-gray-400';
+            tdBlock.textContent = ev.blockNumber;
+
+            const tdTx = document.createElement('td');
+            tdTx.className = 'px-6 py-4 font-mono text-xs text-gray-400';
+            tdTx.textContent = short(ev.transactionHash);
+
+            const tdStatus = document.createElement('td');
+            tdStatus.className = 'px-6 py-4';
+            const statusSpan = document.createElement('span');
+            if (ev.contentHash) {
+                statusSpan.className = 'inline-flex items-center text-xs text-green-400';
+                // SVG is static markup — no user data interpolated.
+                statusSpan.innerHTML = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Verified';
+            } else {
+                statusSpan.className = 'text-xs text-gray-500';
+                statusSpan.textContent = 'Pending';
+            }
+            tdStatus.appendChild(statusSpan);
+
+            const tdIpfs = document.createElement('td');
+            tdIpfs.className = 'px-6 py-4 text-xs text-gray-500';
+            tdIpfs.textContent = ev.ipfsCid ? String(ev.ipfsCid).slice(0, 12) + '…' : '—';
+
+            tr.append(tdContract, tdEvent, tdBlock, tdTx, tdStatus, tdIpfs);
+            tbody.appendChild(tr);
+        }
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-red-400">${err.message}</td></tr>`;
+        resetEventStats();
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 6;
+        td.className = 'px-6 py-8 text-center text-red-400';
+        td.textContent = err.message;
+        tr.appendChild(td);
+        tbody.innerHTML = '';
+        tbody.appendChild(tr);
     }
 }
 
@@ -256,6 +302,14 @@ function clearFeedback(el) {
     if (!el) return;
     el.classList.add('hidden');
     el.textContent = '';
+}
+
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function setupLogout() {

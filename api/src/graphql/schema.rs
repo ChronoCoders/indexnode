@@ -4,7 +4,7 @@ use crate::db;
 use crate::security::{InputValidator, Sanitizer};
 use anyhow::Context as AnyhowContext;
 use async_graphql::*;
-use ethers::types::U256;
+use ethers::types::{Address, U256};
 use indexnode_core::{
     BlockchainIndexParams, CreditManager, JobConfig, JobParams, JobType, MarketplaceClient,
 };
@@ -16,19 +16,27 @@ pub struct Query;
 
 #[Object]
 impl Query {
-    /// Fetches a single job by its ID.
+    /// Fetches a single job by its ID. Only the owning user may access it.
     async fn job(&self, ctx: &Context<'_>, id: String) -> async_graphql::Result<Job> {
         let pool = ctx
             .data::<PgPool>()
             .map_err(|_| Error::new("Failed to get database pool"))?;
+        let user_id = ctx
+            .data_opt::<Uuid>()
+            .cloned()
+            .ok_or_else(|| Error::new("Unauthorized"))?;
         let job_id = Uuid::parse_str(&id)
             .map_err(|e| Error::new(format!("Invalid job ID format: {}", e)))?;
 
-        let row = sqlx::query("SELECT id, status, created_at FROM jobs WHERE id = $1")
-            .bind(job_id)
-            .fetch_one(pool)
-            .await
-            .context("Job not found")?;
+        let row = sqlx::query(
+            "SELECT id, status, created_at FROM jobs WHERE id = $1 AND user_id = $2",
+        )
+        .bind(job_id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .context("Job not found")?
+        .ok_or_else(|| Error::new("Job not found"))?;
 
         use sqlx::Row;
         Ok(Job {
@@ -392,7 +400,7 @@ impl Mutation {
             .cloned()
             .ok_or_else(|| Error::new("Unauthorized"))?;
 
-        // Input validation
+        // Input validation — done before opening the transaction.
         InputValidator::validate_ethereum_address(&input.contract_address)
             .map_err(|e| Error::new(format!("Security validation failed: {}", e)))?;
         InputValidator::validate_string_length(&input.chain, 1, 64, "chain")
@@ -410,9 +418,6 @@ impl Mutation {
             )));
         }
 
-        let job_id = Uuid::new_v4();
-
-        // Validate and parse the optional AI extraction schema.
         let enable_ai = input.enable_ai_extraction.unwrap_or(false);
         let extraction_schema = if let Some(schema_str) = &input.extraction_schema {
             let parsed: serde_json::Value = serde_json::from_str(schema_str)
@@ -447,13 +452,38 @@ impl Mutation {
         let config_json = serde_json::to_value(&config)
             .map_err(|e| Error::new(format!("Config error: {}", e)))?;
 
+        let job_id = Uuid::new_v4();
+
+        // Atomically decrement credits and insert the job in one transaction.
+        // The UPDATE only succeeds if the balance is sufficient, preventing
+        // concurrent requests from double-spending credits.
+        let mut tx = pool.begin().await.context("Failed to begin transaction")?;
+
+        let rows_affected = sqlx::query(
+            "UPDATE user_credits SET credit_balance = credit_balance - 50
+             WHERE user_id = $1 AND credit_balance >= 50",
+        )
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .context("Failed to decrement credits")?
+        .rows_affected();
+
+        if rows_affected == 0 {
+            return Err(Error::new(
+                "Insufficient credits. Please top up your INC balance.",
+            ));
+        }
+
         sqlx::query("INSERT INTO jobs (id, user_id, status, config) VALUES ($1, $2, 'queued', $3)")
             .bind(job_id)
             .bind(user_id)
             .bind(config_json)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .context("Failed to create job")?;
+
+        tx.commit().await.context("Failed to commit transaction")?;
 
         db::audit_log(
             pool,
@@ -705,6 +735,52 @@ impl Mutation {
         .await;
 
         Ok(purchase_id.to_string())
+    }
+
+    /// Reads the caller's credit balance directly from the smart contract and
+    /// writes it back to the database. Call this after a deposit or withdrawal
+    /// transaction has been confirmed on-chain to keep the platform balance in sync.
+    async fn sync_credit_balance(&self, ctx: &Context<'_>) -> async_graphql::Result<i64> {
+        let pool = ctx
+            .data::<PgPool>()
+            .map_err(|_| Error::new("Failed to get database pool"))?;
+        let user_id = ctx
+            .data_opt::<Uuid>()
+            .cloned()
+            .ok_or_else(|| Error::new("Unauthorized"))?;
+        let credit_manager = ctx
+            .data::<CreditManager>()
+            .map_err(|_| Error::new("Credit manager not available"))?;
+
+        let addr_str = sqlx::query_scalar::<_, String>(
+            "SELECT on_chain_address FROM user_credits WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+        .context("Failed to query wallet address")?
+        .ok_or_else(|| Error::new("No wallet registered. Register a wallet address first."))?;
+
+        let addr: Address = addr_str
+            .parse()
+            .map_err(|_| Error::new("Stored wallet address is invalid"))?;
+
+        let balance_wei = credit_manager
+            .get_balance(addr)
+            .await
+            .map_err(|e| Error::new(format!("Failed to read on-chain balance: {}", e)))?;
+
+        // Contract balances are in wei (18 decimals); store whole INC units in the DB.
+        let balance_inc = (balance_wei / U256::exp10(18)).as_u64() as i64;
+
+        sqlx::query("UPDATE user_credits SET credit_balance = $1 WHERE user_id = $2")
+            .bind(balance_inc)
+            .bind(user_id)
+            .execute(pool)
+            .await
+            .context("Failed to update credit balance")?;
+
+        Ok(balance_inc)
     }
 }
 

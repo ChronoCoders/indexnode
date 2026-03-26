@@ -1,5 +1,20 @@
 const API = '';   // same origin
 
+async function gql(query, variables = {}) {
+    const res = await fetch('/graphql', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${window.auth.getToken()}`,
+        },
+        body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.errors) throw new Error(json.errors[0].message);
+    return json.data;
+}
+
 function authHeaders() {
     return {
         'Content-Type': 'application/json',
@@ -41,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLogout();
     setupApiKeySection();
     setupWebhookSection();
+    setupWalletSection();
 });
 
 // ── Profile ───────────────────────────────────────────────────────────────────
@@ -348,6 +364,172 @@ function relativeTime(iso) {
     const days = Math.floor(hrs / 24);
     if (days < 30)  return `${days}d ago`;
     return formatDate(iso);
+}
+
+// ── Wallet / INC Credits ──────────────────────────────────────────────────────
+
+function setupWalletSection() {
+    const w = window.IndexWallet;
+
+    const navBtn         = document.getElementById('walletBtn');
+    const connectBtn     = document.getElementById('connectWalletBtn');
+    const disconnectBtn  = document.getElementById('disconnectWalletBtn');
+    const disconnectedEl = document.getElementById('walletDisconnected');
+    const connectedEl    = document.getElementById('walletConnected');
+    const errorEl        = document.getElementById('walletConnectError');
+    const addressEl      = document.getElementById('walletAddress');
+    const chainBadgeEl   = document.getElementById('walletChainBadge');
+    const unsupportedEl  = document.getElementById('unsupportedChain');
+    const switchAnvilBtn = document.getElementById('switchAnvilBtn');
+    const walBalEl       = document.getElementById('incWalletBalance');
+    const credBalEl      = document.getElementById('incCreditBalance');
+    const depositAmtEl   = document.getElementById('depositAmount');
+    const depositBtn     = document.getElementById('depositBtn');
+    const depositFb      = document.getElementById('depositFeedback');
+    const withdrawAmtEl  = document.getElementById('withdrawAmount');
+    const withdrawBtn    = document.getElementById('withdrawBtn');
+    const withdrawFb     = document.getElementById('withdrawFeedback');
+
+    if (!w) return; // wallet.js not loaded
+
+    function showConnected() {
+        disconnectedEl.classList.add('hidden');
+        connectedEl.classList.remove('hidden');
+        errorEl.classList.add('hidden');
+
+        addressEl.textContent  = w.shortAddr(w.address);
+        const info = w.chainInfo();
+        chainBadgeEl.textContent = info ? info.shortName : `#${w.chain}`;
+
+        if (!w.isChainSupported()) {
+            unsupportedEl.classList.remove('hidden');
+            walBalEl.textContent = credBalEl.textContent = '—';
+        } else {
+            unsupportedEl.classList.add('hidden');
+            refreshBalances();
+        }
+
+        navBtn.textContent = w.shortAddr(w.address);
+        navBtn.classList.add('text-cyan-400', 'border-cyan-800');
+    }
+
+    function showDisconnected() {
+        disconnectedEl.classList.remove('hidden');
+        connectedEl.classList.add('hidden');
+        navBtn.textContent = 'Connect Wallet';
+        navBtn.classList.remove('text-cyan-400', 'border-cyan-800');
+    }
+
+    async function refreshBalances() {
+        if (!w.isChainSupported()) return;
+        walBalEl.textContent = credBalEl.textContent = '…';
+        try {
+            const b = await w.balances();
+            walBalEl.textContent  = b.walletFmt + ' INC';
+            credBalEl.textContent = b.creditFmt + ' INC';
+        } catch (err) {
+            walBalEl.textContent = credBalEl.textContent = 'Error';
+            console.error('Balance fetch failed:', err);
+        }
+    }
+
+    async function doConnect() {
+        if (typeof ethers === 'undefined') {
+            errorEl.textContent = 'ethers.js failed to load — please refresh the page.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        errorEl.classList.add('hidden');
+        connectBtn.disabled = true;
+        connectBtn.textContent = 'Connecting…';
+        navBtn.disabled = true;
+        try {
+            await w.connect();
+            showConnected();
+        } catch (err) {
+            console.error('[wallet] connect failed:', err);
+            errorEl.textContent = err.message;
+            errorEl.classList.remove('hidden');
+        } finally {
+            connectBtn.disabled = false;
+            connectBtn.textContent = 'Connect Wallet';
+            navBtn.disabled = false;
+        }
+    }
+
+    connectBtn.addEventListener('click', doConnect);
+    navBtn.addEventListener('click', () => {
+        if (w.address) return; // already connected, clicking does nothing for now
+        doConnect();
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+        w.disconnect();
+        showDisconnected();
+    });
+
+    w.on('connect', () => showConnected());
+    w.on('chainChanged', () => showConnected());
+    w.on('disconnect', () => showDisconnected());
+
+    switchAnvilBtn.addEventListener('click', async () => {
+        switchAnvilBtn.disabled = true;
+        switchAnvilBtn.textContent = 'Switching…';
+        try {
+            await w.switchToAnvil();
+        } catch (err) {
+            console.error('[wallet] chain switch failed:', err);
+        } finally {
+            switchAnvilBtn.disabled = false;
+            switchAnvilBtn.textContent = 'Switch to Local Anvil';
+        }
+    });
+
+    depositBtn.addEventListener('click', async () => {
+        const amount = parseFloat(depositAmtEl.value);
+        if (!amount || amount <= 0) {
+            showFeedback(depositFb, 'error', 'Enter a valid amount.');
+            return;
+        }
+        depositBtn.disabled = true;
+        depositBtn.textContent = 'Confirm in wallet…';
+        clearFeedback(depositFb);
+        try {
+            await w.purchaseCredits(amount);
+            await gql('mutation { syncCreditBalance }');
+            showFeedback(depositFb, 'success', `${amount} INC deposited as credits.`);
+            depositAmtEl.value = '';
+            await refreshBalances();
+        } catch (err) {
+            showFeedback(depositFb, 'error', err.reason ?? err.message);
+        } finally {
+            depositBtn.disabled = false;
+            depositBtn.textContent = 'Deposit';
+        }
+    });
+
+    withdrawBtn.addEventListener('click', async () => {
+        const amount = parseFloat(withdrawAmtEl.value);
+        if (!amount || amount <= 0) {
+            showFeedback(withdrawFb, 'error', 'Enter a valid amount.');
+            return;
+        }
+        withdrawBtn.disabled = true;
+        withdrawBtn.textContent = 'Confirm in wallet…';
+        clearFeedback(withdrawFb);
+        try {
+            await w.withdrawCredits(amount);
+            await gql('mutation { syncCreditBalance }');
+            showFeedback(withdrawFb, 'success', `${amount} INC withdrawn to wallet.`);
+            withdrawAmtEl.value = '';
+            await refreshBalances();
+        } catch (err) {
+            showFeedback(withdrawFb, 'error', err.reason ?? err.message);
+        } finally {
+            withdrawBtn.disabled = false;
+            withdrawBtn.textContent = 'Withdraw';
+        }
+    });
 }
 
 async function copyText(text, btnId) {
