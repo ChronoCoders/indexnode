@@ -112,13 +112,15 @@
   <span class="text-gray-300">blockchainEvents</span>(
     <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
     <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Swap"</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">50</span>
   ) {
-    <span class="text-gray-300">tokenIn</span>
-    <span class="text-gray-300">tokenOut</span>
-    <span class="text-gray-300">amountIn</span>
-    <span class="text-gray-300">amountOut</span>
-    <span class="text-gray-300">timestamp</span>
-    <span class="text-gray-300">merkleProof</span>
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">eventData</span>
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">ipfsCid</span>
   }
 }</code></pre>
                     </div>
@@ -135,11 +137,13 @@
     <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
     <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Transfer"</span>
   ) {
-    <span class="text-gray-300">from</span>
-    <span class="text-gray-300">to</span>
-    <span class="text-gray-300">tokenId</span>
-    <span class="text-gray-300">timestamp</span>
-    <span class="text-gray-300">ipfsUrl</span>
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">eventData</span>
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">ipfsCid</span>
   }
 }</code></pre>
                     </div>
@@ -225,12 +229,16 @@
                         <div class="text-sm text-gray-400 mb-3 font-mono">Protocol TVL Query</div>
                         <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">ProtocolTVL</span> {
   <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
     <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Deposit"</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">100</span>
   ) {
-    <span class="text-gray-300">amount</span>
-    <span class="text-gray-300">token</span>
-    <span class="text-gray-300">timestamp</span>
-    <span class="text-gray-300">merkleProof</span>
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">eventData</span>
+    <span class="text-gray-300">contentHash</span>
   }
 }</code></pre>
                     </div>
@@ -244,12 +252,16 @@
                         <div class="text-sm text-gray-400 mb-3 font-mono">Track In-Game Items</div>
                         <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">ItemTransfers</span> {
   <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
     <span class="text-purple-400">eventName</span>: <span class="text-green-400">"ItemCrafted"</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">50</span>
   ) {
-    <span class="text-gray-300">player</span>
-    <span class="text-gray-300">itemId</span>
-    <span class="text-gray-300">rarity</span>
-    <span class="text-gray-300">verifiedAt</span>
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">eventData</span>
+    <span class="text-gray-300">contentHash</span>
   }
 }</code></pre>
                     </div>
@@ -335,13 +347,16 @@
                         <div class="text-sm text-gray-400 mb-3 font-mono">Track Governance Votes</div>
                         <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GovernanceVotes</span> {
   <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
     <span class="text-purple-400">eventName</span>: <span class="text-green-400">"VoteCast"</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">100</span>
   ) {
-    <span class="text-gray-300">proposalId</span>
-    <span class="text-gray-300">voter</span>
-    <span class="text-gray-300">support</span>
-    <span class="text-gray-300">weight</span>
-    <span class="text-gray-300">merkleProof</span>
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">eventName</span>
+    <span class="text-gray-300">blockNumber</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">eventData</span>
+    <span class="text-gray-300">contentHash</span>
   }
 }</code></pre>
                     </div>
@@ -355,10 +370,10 @@
     <section class="py-24 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border-t border-gray-800">
         <div class="container mx-auto px-6 text-center">
             <h2 class="text-4xl font-bold mb-6">
-                Ready to Build Your Use Case?
+                Build on Verified Data.
             </h2>
             <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-                Start indexing blockchain events with cryptographic verification today
+                Point IndexNode at any smart contract and start querying verified events in minutes.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
