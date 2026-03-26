@@ -289,14 +289,25 @@
                 </div>
                 
                 <div class="mb-8">
-                    <h3 class="text-xl font-semibold mb-4">Retrieve IPFS Content</h3>
-                    <p class="text-gray-400 mb-4">Use the <code class="bg-gray-800 px-1 rounded">ipfsCid</code> from any event to fetch content directly from IPFS — no API call required. Content is pinned via Pinata and available on any public gateway.</p>
+                    <h3 class="text-xl font-semibold mb-4">ipfsContent</h3>
+                    <p class="text-gray-400 mb-4">Query metadata for content stored on IPFS by CID. Returns pin status, size, and content hash.</p>
                     <div class="code-block p-4">
-                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-gray-500"># Fetch via public gateway (no auth required)</span>
-https://gateway.pinata.cloud/ipfs/{ipfsCid}
-
-<span class="text-gray-500"># Or any other IPFS gateway</span>
-https://ipfs.io/ipfs/{ipfsCid}</code></pre>
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetIPFSContent</span> {
+  <span class="text-gray-300">ipfsContent</span>(
+    <span class="text-purple-400">cid</span>: <span class="text-green-400">"QmYw..."</span>
+  ) {
+    <span class="text-gray-300">cid</span>
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">sizeBytes</span>
+    <span class="text-gray-300">pinned</span>
+    <span class="text-gray-300">createdAt</span>
+  }
+}</code></pre>
+                    </div>
+                    <p class="text-gray-400 mt-4">To fetch the actual content, use the CID directly with any IPFS gateway:</p>
+                    <div class="code-block p-4 mt-3">
+                        <pre class="font-mono text-sm"><code class="text-gray-300">https://gateway.pinata.cloud/ipfs/{cid}
+https://ipfs.io/ipfs/{cid}</code></pre>
                     </div>
                 </div>
             </section>
