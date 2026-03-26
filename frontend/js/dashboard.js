@@ -1,6 +1,6 @@
 const GRAPHQL_URL = '/graphql';
 
-// Send a GraphQL request with the stored JWT.
+// Send a GraphQL request using the HttpOnly cookie for auth.
 async function gql(query, variables = {}) {
     const res = await fetch(GRAPHQL_URL, {
         method: 'POST',
@@ -39,20 +39,119 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('mainContent').classList.remove('hidden');
 
-    resetEventStats();
+    loadAccountOverview();
     setupWalletSection();
     setupCreateJobForm();
     setupContractSearch();
     setupLogout();
+
+    document.getElementById('refreshJobs')?.addEventListener('click', () => loadAccountOverview());
 });
 
-// ── Snapshot Stats ───────────────────────────────────────────────────────────
+// ── Account Overview ──────────────────────────────────────────────────────────
+
+async function loadAccountOverview() {
+    try {
+        const data = await gql(`{
+            walletInfo { creditBalance }
+            myJobs(limit: 50) {
+                id jobType status target chain createdAt completedAt error
+            }
+        }`);
+
+        // Credit balance
+        const balance = data.walletInfo ? data.walletInfo.creditBalance : null;
+        setStat('credit-balance', balance !== null ? balance.toLocaleString('en-US') : '—');
+
+        // Active jobs count
+        const jobs = data.myJobs || [];
+        const active = jobs.filter(j => j.status === 'pending' || j.status === 'processing').length;
+        setStat('active-jobs', active.toLocaleString('en-US'));
+
+        // Jobs table
+        renderJobs(jobs);
+    } catch (err) {
+        console.error('Failed to load account overview:', err);
+        setStat('credit-balance', '—');
+        setStat('active-jobs', '—');
+    }
+}
+
+function renderJobs(jobs) {
+    const tbody = document.getElementById('jobsTableBody');
+    if (!tbody) return;
+
+    if (!jobs || jobs.length === 0) {
+        tbody.innerHTML = '';
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 5;
+        td.className = 'px-6 py-8 text-center text-gray-500';
+        td.textContent = 'No jobs yet. Create an indexing job below.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+    }
+
+    tbody.innerHTML = '';
+    for (const job of jobs) {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-800/50';
+
+        const tdType = document.createElement('td');
+        tdType.className = 'px-6 py-4 text-sm';
+        tdType.textContent = job.jobType === 'blockchain_index' ? 'Blockchain' : job.jobType === 'http_crawl' ? 'HTTP Crawl' : job.jobType;
+
+        const tdTarget = document.createElement('td');
+        tdTarget.className = 'px-6 py-4 font-mono text-xs text-gray-300';
+        if (job.target) {
+            const t = String(job.target);
+            tdTarget.textContent = t.length > 20 ? t.slice(0, 10) + '…' + t.slice(-8) : t;
+            tdTarget.title = t;
+        } else {
+            tdTarget.textContent = '—';
+        }
+
+        const tdChain = document.createElement('td');
+        tdChain.className = 'px-6 py-4 text-sm text-gray-400 capitalize';
+        tdChain.textContent = job.chain || '—';
+
+        const tdStatus = document.createElement('td');
+        tdStatus.className = 'px-6 py-4';
+        const badge = document.createElement('span');
+        badge.textContent = job.status;
+        const statusClasses = {
+            pending:    'bg-yellow-900/40 text-yellow-400',
+            processing: 'bg-blue-900/40 text-blue-400',
+            completed:  'bg-green-900/40 text-green-400',
+            failed:     'bg-red-900/40 text-red-400',
+        };
+        badge.className = `inline-block px-2 py-0.5 rounded text-xs font-medium ${statusClasses[job.status] || 'bg-gray-800 text-gray-400'}`;
+        tdStatus.appendChild(badge);
+
+        const tdCreated = document.createElement('td');
+        tdCreated.className = 'px-6 py-4 text-sm text-gray-500';
+        tdCreated.textContent = job.createdAt ? new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+        tr.append(tdType, tdTarget, tdChain, tdStatus, tdCreated);
+        tbody.appendChild(tr);
+    }
+}
+
+function setStat(key, value) {
+    const el = document.querySelector(`[data-stat="${key}"]`);
+    if (el) el.textContent = value;
+}
+
+// ── Event Stats (inline, shown after contract search) ─────────────────────────
 
 function resetEventStats() {
     setStat('events-total', '—');
     setStat('events-verified', '—');
     setStat('events-ipfs', '—');
     setStat('events-latest-block', '—');
+    const bar = document.getElementById('eventStatsBar');
+    if (bar) bar.style.display = 'none';
 }
 
 function updateEventStats(events) {
@@ -65,11 +164,8 @@ function updateEventStats(events) {
     setStat('events-verified', verified.toLocaleString('en-US'));
     setStat('events-ipfs', withIpfs.toLocaleString('en-US'));
     setStat('events-latest-block', latestBlock ? latestBlock.toLocaleString('en-US') : '—');
-}
-
-function setStat(key, value) {
-    const el = document.querySelector(`[data-stat="${key}"]`);
-    if (el) el.textContent = value;
+    const bar = document.getElementById('eventStatsBar');
+    if (bar) bar.style.display = 'grid';
 }
 
 // ── Wallet Section ───────────────────────────────────────────────────────────
@@ -78,7 +174,7 @@ async function setupWalletSection() {
     // Load existing wallet if any.
     try {
         const data = await gql(`{ walletInfo { walletAddress creditBalance } }`);
-        if (data.walletInfo) {
+        if (data.walletInfo && data.walletInfo.walletAddress) {
             showRegisteredWallet(data.walletInfo.walletAddress);
         }
     } catch (err) {
@@ -107,6 +203,7 @@ async function setupWalletSection() {
             `, { addr });
             showRegisteredWallet(data.registerWallet.walletAddress);
             showFeedback(feedback, 'success', 'Wallet registered successfully.');
+            setStat('credit-balance', data.registerWallet.creditBalance.toLocaleString('en-US'));
             form.reset();
         } catch (err) {
             showFeedback(feedback, 'error', `Registration failed: ${err.message}`);
@@ -178,6 +275,8 @@ function setupCreateJobForm() {
             showFeedback(feedback, 'success',
                 `Job created — ID: ${data.createBlockchainJob.id} (${data.createBlockchainJob.status})`);
             form.reset();
+            // Refresh jobs list to show the new job.
+            loadAccountOverview();
         } catch (err) {
             showFeedback(feedback, 'error', `Failed to create job: ${err.message}`);
         } finally {
@@ -205,7 +304,14 @@ async function loadEvents(contractAddress) {
     const tbody = document.getElementById('eventsTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading…</td></tr>`;
+    tbody.innerHTML = '';
+    const loadingTr = document.createElement('tr');
+    const loadingTd = document.createElement('td');
+    loadingTd.colSpan = 6;
+    loadingTd.className = 'px-6 py-8 text-center text-gray-500';
+    loadingTd.textContent = 'Loading…';
+    loadingTr.appendChild(loadingTd);
+    tbody.appendChild(loadingTr);
 
     try {
         const data = await gql(`
@@ -225,7 +331,14 @@ async function loadEvents(contractAddress) {
         const events = data.blockchainEvents;
 
         if (events.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No events found for this contract.</td></tr>`;
+            tbody.innerHTML = '';
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 6;
+            td.className = 'px-6 py-8 text-center text-gray-500';
+            td.textContent = 'No events found for this contract.';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
             updateEventStats([]);
             return;
         }
@@ -278,13 +391,13 @@ async function loadEvents(contractAddress) {
         }
     } catch (err) {
         resetEventStats();
+        tbody.innerHTML = '';
         const tr = document.createElement('tr');
         const td = document.createElement('td');
         td.colSpan = 6;
         td.className = 'px-6 py-8 text-center text-red-400';
         td.textContent = err.message;
         tr.appendChild(td);
-        tbody.innerHTML = '';
         tbody.appendChild(tr);
     }
 }
@@ -302,14 +415,6 @@ function clearFeedback(el) {
     if (!el) return;
     el.classList.add('hidden');
     el.textContent = '';
-}
-
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
 }
 
 function setupLogout() {
