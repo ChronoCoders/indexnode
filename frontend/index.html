@@ -296,8 +296,8 @@
         <div class="container mx-auto px-6 py-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div>
-                    <div class="text-4xl font-bold text-cyan-400 mb-2">2</div>
-                    <div class="text-gray-400">Chains Supported</div>
+                    <div class="text-4xl font-bold text-cyan-400 mb-2">1,000</div>
+                    <div class="text-gray-400">Free Credits on Signup</div>
                 </div>
                 <div>
                     <div class="text-4xl font-bold text-cyan-400 mb-2">99.9%</div>
@@ -305,7 +305,7 @@
                 </div>
                 <div>
                     <div class="text-4xl font-bold text-cyan-400 mb-2">&lt;50ms</div>
-                    <div class="text-gray-400">Response Time</div>
+                    <div class="text-gray-400">API Response Time</div>
                 </div>
             </div>
         </div>
@@ -315,9 +315,9 @@
     <section class="py-24 bg-gray-950">
         <div class="container mx-auto px-6">
             <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-bold mb-4">Built for Production</h2>
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">Index. Hash. Prove.</h2>
                 <p class="text-xl text-gray-400 max-w-2xl mx-auto">
-                    Enterprise-grade blockchain indexing with cryptographic verification
+                    Blockchain event indexing with cryptographic verification and on-chain timestamps
                 </p>
             </div>
             
@@ -403,7 +403,7 @@
         <div class="container mx-auto px-6">
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-bold mb-4">How It Works</h2>
-                <p class="text-xl text-gray-400">Simple, transparent, verifiable</p>
+                <p class="text-xl text-gray-400">From raw event to cryptographic proof in three steps</p>
             </div>
             
             <div class="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
@@ -460,13 +460,14 @@
                         </button>
                     </div>
                     <pre class="font-mono text-sm leading-relaxed overflow-x-auto"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">BlockchainEvents</span> {
-  <span class="text-gray-300">blockchainEvents</span>(<span class="text-purple-400">limit</span>: <span class="text-green-400">10</span>) {
+  <span class="text-gray-300">blockchainEvents</span>(<span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0xA0b869…"</span>, <span class="text-purple-400">limit</span>: <span class="text-green-400">10</span>) {
     <span class="text-gray-300">id</span>
     <span class="text-gray-300">contractAddress</span>
     <span class="text-gray-300">eventName</span>
     <span class="text-gray-300">blockNumber</span>
-    <span class="text-gray-300">merkleProof</span>
-    <span class="text-gray-300">verifiedAt</span>
+    <span class="text-gray-300">transactionHash</span>
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">ipfsCid</span>
   }
 }</code></pre>
                 </div>
@@ -488,8 +489,8 @@
     <section class="py-24 bg-gray-900/50">
         <div class="container mx-auto px-6">
             <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold mb-4">Production-Ready Dashboard</h2>
-                <p class="text-xl text-gray-400">Monitor and verify your blockchain data</p>
+                <h2 class="text-4xl font-bold mb-4">Everything in One Place</h2>
+                <p class="text-xl text-gray-400">Monitor jobs, query events, and verify proofs from a single dashboard</p>
             </div>
             
             <div class="max-w-6xl mx-auto">
@@ -701,10 +702,10 @@
     <section class="py-24 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border-t border-gray-800">
         <div class="container mx-auto px-6 text-center">
             <h2 class="text-4xl md:text-5xl font-bold mb-6">
-                Ready to Verify Your Data?
+                Your Data. Cryptographically Proven.
             </h2>
             <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-                Start indexing blockchain events with cryptographic proofs in minutes
+                Start with 1,000 free credits. No credit card required.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="signup.html" class="bg-cyan-600 hover:bg-cyan-700 px-8 py-4 rounded-md font-medium text-lg transition inline-flex items-center justify-center">
