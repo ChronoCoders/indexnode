@@ -146,12 +146,14 @@
                     </p>
                     <div class="code-block">
 <pre><span style="color:#c084fc">query</span> {
-  <span style="color:#67e8f9">verifyHash</span>(contentHash: <span style="color:#86efac">"0x9f3a..."</span>) {
-    verified
-    blockNumber
+  <span style="color:#67e8f9">blockchainEvents</span>(contractAddress: <span style="color:#86efac">"0x..."</span>, limit: <span style="color:#86efac">1</span>) {
+    contentHash
     transactionHash
+    blockNumber
   }
-}</pre>
+}
+<span style="color:#6b7280"># Then call TimestampRegistry.getCommitment(contentHash) on-chain.
+# Returns the block it was committed in — verifiable on any Ethereum/Polygon RPC.</span></pre>
                     </div>
                     <p>
                         For high-throughput dashboards, batch verification client-side by checking the Merkle root directly against the on-chain <code>TimestampRegistry</code> contract rather than making per-event API calls.
