@@ -67,68 +67,65 @@
                 <p class="text-gray-400">Monitor your blockchain indexing activity</p>
             </div>
             
-            <!-- Activity Snapshot -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Account Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                    <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start justify-between">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">Total Events</p>
-                            <p class="text-3xl font-bold text-cyan-400" data-stat="events-total">—</p>
+                            <p class="text-gray-400 text-sm mb-1">Credit Balance</p>
+                            <p class="text-3xl font-bold text-cyan-400" data-stat="credit-balance">—</p>
+                            <p class="text-sm text-gray-500 mt-1">INC tokens available</p>
                         </div>
                         <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                            </svg>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500">Updates after you fetch a contract</p>
-                </div>
-
-                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm mb-1">Verified Hashes</p>
-                            <p class="text-3xl font-bold" data-stat="events-verified">—</p>
-                        </div>
-                        <div class="w-12 h-12 bg-green-600/10 rounded-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400">
                                 <circle cx="12" cy="12" r="10"></circle>
-                                <path d="m9 12 2 2 4-4"></path>
+                                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                                <path d="M12 18V6"></path>
                             </svg>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500">Events with content hashes</p>
                 </div>
 
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                    <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start justify-between">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">IPFS CIDs</p>
-                            <p class="text-3xl font-bold" data-stat="events-ipfs">—</p>
+                            <p class="text-gray-400 text-sm mb-1">Active Jobs</p>
+                            <p class="text-3xl font-bold" data-stat="active-jobs">—</p>
+                            <p class="text-sm text-gray-500 mt-1">Queued or processing</p>
                         </div>
                         <div class="w-12 h-12 bg-blue-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
-                                <path d="M21 16a4 4 0 0 1-4 4H7a5 5 0 1 1 0-10h10a4 4 0 0 1 4 4z"></path>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500">Pinned or linked events</p>
                 </div>
+            </div>
 
-                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm mb-1">Latest Block</p>
-                            <p class="text-3xl font-bold" data-stat="events-latest-block">—</p>
-                        </div>
-                        <div class="w-12 h-12 bg-purple-600/10 rounded-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
-                                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                                <path d="M7 7h10M7 12h10M7 17h6"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500">From the most recent event</p>
+            <!-- My Jobs -->
+            <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden mb-8">
+                <div class="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                    <h2 class="text-2xl font-bold">My Jobs</h2>
+                    <button id="refreshJobs" class="text-sm text-gray-400 hover:text-cyan-400 transition">Refresh</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-gray-400 border-b border-gray-800">
+                                <th class="px-6 py-3 font-medium">Type</th>
+                                <th class="px-6 py-3 font-medium">Target</th>
+                                <th class="px-6 py-3 font-medium">Chain</th>
+                                <th class="px-6 py-3 font-medium">Status</th>
+                                <th class="px-6 py-3 font-medium">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800" id="jobsTableBody">
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-500">Loading jobs…</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             
@@ -241,7 +238,7 @@
             <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-800">
                     <h2 class="text-2xl font-bold mb-4">Blockchain Events</h2>
-                    <form id="contractSearchForm" class="flex gap-3">
+                    <form id="contractSearchForm" class="flex gap-3 mb-4">
                         <input
                             type="text"
                             id="searchContractAddress"
@@ -252,6 +249,24 @@
                             Fetch Events
                         </button>
                     </form>
+                    <div id="eventStatsBar" class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-800" style="display:none">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Total Events</p>
+                            <p class="text-lg font-semibold text-cyan-400" data-stat="events-total">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Verified Hashes</p>
+                            <p class="text-lg font-semibold text-green-400" data-stat="events-verified">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">IPFS CIDs</p>
+                            <p class="text-lg font-semibold text-blue-400" data-stat="events-ipfs">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Latest Block</p>
+                            <p class="text-lg font-semibold text-purple-400" data-stat="events-latest-block">—</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">

@@ -126,6 +126,67 @@ impl Query {
         })
     }
 
+    /// Fetches the authenticated user's recent jobs.
+    async fn my_jobs(
+        &self,
+        ctx: &Context<'_>,
+        limit: Option<i32>,
+    ) -> async_graphql::Result<Vec<UserJob>> {
+        let pool = ctx
+            .data::<PgPool>()
+            .map_err(|_| Error::new("Failed to get database pool"))?;
+        let user_id = ctx
+            .data_opt::<Uuid>()
+            .cloned()
+            .ok_or_else(|| Error::new("Unauthorized"))?;
+        let limit = limit.unwrap_or(20).min(50);
+
+        let rows = sqlx::query(
+            "SELECT id, status, config, created_at, completed_at, error
+             FROM jobs
+             WHERE user_id = $1
+             ORDER BY created_at DESC
+             LIMIT $2",
+        )
+        .bind(user_id)
+        .bind(limit as i64)
+        .fetch_all(pool)
+        .await
+        .context("Failed to fetch jobs")?;
+
+        use sqlx::Row;
+        Ok(rows
+            .into_iter()
+            .map(|r| {
+                let config: serde_json::Value = r.get("config");
+                let job_type = config["job_type"]
+                    .as_str()
+                    .unwrap_or("unknown")
+                    .to_string();
+                let target = if job_type == "blockchain_index" {
+                    config["params"]["contract_address"]
+                        .as_str()
+                        .map(|s| s.to_string())
+                } else {
+                    config["params"]["url"].as_str().map(|s| s.to_string())
+                };
+                let chain = config["params"]["chain"].as_str().map(|s| s.to_string());
+                let created: chrono::DateTime<chrono::Utc> = r.get("created_at");
+                let completed: Option<chrono::DateTime<chrono::Utc>> = r.get("completed_at");
+                UserJob {
+                    id: r.get::<Uuid, _>("id").to_string(),
+                    job_type,
+                    status: r.get("status"),
+                    target,
+                    chain,
+                    created_at: created.to_rfc3339(),
+                    completed_at: completed.map(|t| t.to_rfc3339()),
+                    error: r.get("error"),
+                }
+            })
+            .collect())
+    }
+
     /// Fetches the credit balance for the authenticated user.
     async fn credit_balance(&self, ctx: &Context<'_>) -> async_graphql::Result<i64> {
         let pool = ctx
@@ -168,7 +229,7 @@ impl Query {
 
         use sqlx::Row;
         Ok(row.map(|r| WalletInfo {
-            wallet_address: r.get("on_chain_address"),
+            wallet_address: r.get::<Option<String>, _>("on_chain_address"),
             credit_balance: r.get("credit_balance"),
         }))
     }
@@ -551,7 +612,7 @@ impl Mutation {
         .await;
 
         Ok(WalletInfo {
-            wallet_address,
+            wallet_address: Some(wallet_address),
             credit_balance: balance,
         })
     }

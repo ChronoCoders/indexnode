@@ -59,6 +59,13 @@ pub async fn register(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
+    const SIGNUP_BONUS: i64 = 1000;
+
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        tracing::error!("Failed to begin transaction: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
     sqlx::query(
         "INSERT INTO users (id, email, password_hash, role, created_at) VALUES ($1, $2, $3, 'user', $4)",
     )
@@ -66,10 +73,40 @@ pub async fn register(
     .bind(&req.email)
     .bind(&password_hash)
     .bind(Utc::now())
-    .execute(&state.pool)
+    .execute(&mut *tx)
     .await
     .map_err(|e| {
         tracing::error!("Database insert error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    sqlx::query(
+        "INSERT INTO user_credits (user_id, on_chain_address, credit_balance, total_purchased, total_spent)
+         VALUES ($1, NULL, $2, $2, 0)",
+    )
+    .bind(user_id)
+    .bind(SIGNUP_BONUS)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to create signup credits: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    sqlx::query(
+        "INSERT INTO credit_transactions (user_id, transaction_type, amount) VALUES ($1, 'bonus', $2)",
+    )
+    .bind(user_id)
+    .bind(SIGNUP_BONUS)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to record signup bonus transaction: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tx.commit().await.map_err(|e| {
+        tracing::error!("Failed to commit registration transaction: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 

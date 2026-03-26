@@ -508,33 +508,21 @@
                     </div>
                     
                     <div class="p-6 bg-gray-950">
-                        
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                            
+
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+
                             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
                                 <div class="flex items-start justify-between">
                                     <div>
-                                        <p class="text-gray-400 text-xs mb-1">Total Events</p>
-                                        <p class="text-2xl font-bold text-cyan-400">1.2M</p>
+                                        <p class="text-gray-400 text-xs mb-1">Credit Balance</p>
+                                        <p class="text-2xl font-bold text-cyan-400">2,450</p>
+                                        <p class="text-xs text-gray-500 mt-1">INC tokens available</p>
                                     </div>
                                     <div class="w-10 h-10 bg-cyan-600/10 rounded-lg flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
-                                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                                <div class="flex items-start justify-between">
-                                    <div>
-                                        <p class="text-gray-400 text-xs mb-1">Verified Hashes</p>
-                                        <p class="text-2xl font-bold">847K</p>
-                                    </div>
-                                    <div class="w-10 h-10 bg-green-600/10 rounded-lg flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400">
                                             <circle cx="12" cy="12" r="10"></circle>
-                                            <path d="m9 12 2 2 4-4"></path>
+                                            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                                            <path d="M12 18V6"></path>
                                         </svg>
                                     </div>
                                 </div>
@@ -543,32 +531,62 @@
                             <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
                                 <div class="flex items-start justify-between">
                                     <div>
-                                        <p class="text-gray-400 text-xs mb-1">IPFS CIDs</p>
-                                        <p class="text-2xl font-bold">312K</p>
+                                        <p class="text-gray-400 text-xs mb-1">Active Jobs</p>
+                                        <p class="text-2xl font-bold">3</p>
+                                        <p class="text-xs text-gray-500 mt-1">Queued or processing</p>
                                     </div>
                                     <div class="w-10 h-10 bg-blue-600/10 rounded-lg flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
-                                            <path d="M21 16a4 4 0 0 1-4 4H7a5 5 0 1 1 0-10h10a4 4 0 0 1 4 4z"></path>
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
                                         </svg>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                                <div class="flex items-start justify-between">
-                                    <div>
-                                        <p class="text-gray-400 text-xs mb-1">Latest Block</p>
-                                        <p class="text-2xl font-bold">21,583,147</p>
-                                    </div>
-                                    <div class="w-10 h-10 bg-purple-600/10 rounded-lg flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
-                                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                                            <path d="M7 7h10M7 12h10M7 17h6"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                        </div>
+
+                        <div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden mb-6">
+                            <div class="px-5 py-3 border-b border-gray-800 flex justify-between items-center">
+                                <h3 class="text-lg font-semibold">My Jobs</h3>
+                                <span class="text-gray-500 text-xs">Refresh</span>
                             </div>
-                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="text-left text-gray-400 border-b border-gray-800">
+                                            <th class="px-5 py-3 font-medium">Type</th>
+                                            <th class="px-5 py-3 font-medium">Target</th>
+                                            <th class="px-5 py-3 font-medium">Chain</th>
+                                            <th class="px-5 py-3 font-medium">Status</th>
+                                            <th class="px-5 py-3 font-medium">Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-800">
+                                        <tr class="hover:bg-gray-800/50">
+                                            <td class="px-5 py-3">Blockchain</td>
+                                            <td class="px-5 py-3 font-mono text-xs text-gray-300">0xA0b869…9c5204</td>
+                                            <td class="px-5 py-3 text-gray-400">ethereum</td>
+                                            <td class="px-5 py-3"><span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-900/40 text-blue-400">processing</span></td>
+                                            <td class="px-5 py-3 text-gray-500">Mar 26, 2026</td>
+                                        </tr>
+                                        <tr class="hover:bg-gray-800/50">
+                                            <td class="px-5 py-3">Blockchain</td>
+                                            <td class="px-5 py-3 font-mono text-xs text-gray-300">0x88e6A0…5c0640</td>
+                                            <td class="px-5 py-3 text-gray-400">polygon</td>
+                                            <td class="px-5 py-3"><span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-900/40 text-green-400">completed</span></td>
+                                            <td class="px-5 py-3 text-gray-500">Mar 25, 2026</td>
+                                        </tr>
+                                        <tr class="hover:bg-gray-800/50">
+                                            <td class="px-5 py-3">Blockchain</td>
+                                            <td class="px-5 py-3 font-mono text-xs text-gray-300">0x7ceB23…Fd7eE6</td>
+                                            <td class="px-5 py-3 text-gray-400">ethereum</td>
+                                            <td class="px-5 py-3"><span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-400">pending</span></td>
+                                            <td class="px-5 py-3 text-gray-500">Mar 25, 2026</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         
                         <div class="bg-gray-900 border border-gray-800 rounded-lg p-5 mb-6">

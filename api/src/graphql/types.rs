@@ -133,11 +133,27 @@ pub struct MarketplacePurchase {
     pub purchased_at: String,
 }
 
+/// A job belonging to the authenticated user.
+#[derive(SimpleObject)]
+pub struct UserJob {
+    pub id: String,
+    /// "blockchain_index" or "http_crawl"
+    pub job_type: String,
+    pub status: String,
+    /// Contract address for blockchain jobs, URL for crawl jobs.
+    pub target: Option<String>,
+    /// Chain name for blockchain jobs (e.g. "ethereum").
+    pub chain: Option<String>,
+    pub created_at: String,
+    pub completed_at: Option<String>,
+    pub error: Option<String>,
+}
+
 /// Wallet registration info for the authenticated user.
 #[derive(SimpleObject)]
 pub struct WalletInfo {
-    /// The registered Ethereum wallet address.
-    pub wallet_address: String,
+    /// The registered Ethereum wallet address, if one has been linked.
+    pub wallet_address: Option<String>,
     /// Current credit balance on the platform.
     pub credit_balance: i64,
 }
