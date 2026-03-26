@@ -479,35 +479,43 @@ console.<span class="text-cyan-400">log</span>(<span class="text-green-400">'Ver
                 <h2 class="text-3xl font-bold mb-4">HTTP Examples (JavaScript)</h2>
                 <p class="text-gray-400 mb-6">The GraphQL API works directly from any HTTP client. Below are ready-to-use fetch examples for Node.js and browsers.</p>
                 
-                <h3 class="text-xl font-semibold mb-4">Installation</h3>
+                <h3 class="text-xl font-semibold mb-4">Query Events</h3>
                 <div class="code-block p-4 mb-6">
-                    <pre class="font-mono text-sm"><code class="text-gray-300">npm install @indexnode/client</code></pre>
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">const</span> res = <span class="text-purple-400">await</span> <span class="text-cyan-400">fetch</span>(<span class="text-green-400">'https://api.indexnode.io/graphql'</span>, {
+  method: <span class="text-green-400">'POST'</span>,
+  credentials: <span class="text-green-400">'include'</span>,
+  headers: { <span class="text-green-400">'Content-Type'</span>: <span class="text-green-400">'application/json'</span> },
+  body: <span class="text-cyan-400">JSON.stringify</span>({
+    query: <span class="text-green-400">`query {
+      blockchainEvents(contractAddress: "0x...", limit: 10) {
+        id contractAddress eventName blockNumber
+        transactionHash contentHash ipfsCid
+      }
+    }`</span>
+  })
+});
+<span class="text-purple-400">const</span> { data } = <span class="text-purple-400">await</span> res.<span class="text-cyan-400">json</span>();
+console.<span class="text-cyan-400">log</span>(data.blockchainEvents);</code></pre>
                 </div>
-                
-                <h3 class="text-xl font-semibold mb-4">Usage</h3>
+
+                <h3 class="text-xl font-semibold mb-4">Create an Indexing Job</h3>
                 <div class="code-block p-4">
-                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">import</span> { IndexNodeClient } <span class="text-purple-400">from</span> <span class="text-green-400">'@indexnode/client'</span>;
-
-<span class="text-purple-400">const</span> client = <span class="text-purple-400">new</span> <span class="text-blue-400">IndexNodeClient</span>({
-  apiKey: <span class="text-green-400">'your_api_key'</span>
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">const</span> res = <span class="text-purple-400">await</span> <span class="text-cyan-400">fetch</span>(<span class="text-green-400">'https://api.indexnode.io/graphql'</span>, {
+  method: <span class="text-green-400">'POST'</span>,
+  credentials: <span class="text-green-400">'include'</span>,
+  headers: { <span class="text-green-400">'Content-Type'</span>: <span class="text-green-400">'application/json'</span> },
+  body: <span class="text-cyan-400">JSON.stringify</span>({
+    query: <span class="text-green-400">`mutation {
+      createBlockchainJob(input: {
+        contractAddress: "0x..."
+        chain: "ethereum"
+        fromBlock: 18500000
+      }) { id status }
+    }`</span>
+  })
 });
-
-<span class="text-gray-500">// Query events</span>
-<span class="text-purple-400">const</span> events = <span class="text-purple-400">await</span> client.<span class="text-cyan-400">query</span>({
-  blockchainEvents: {
-    contractAddress: <span class="text-green-400">'0x...'</span>,
-    limit: <span class="text-green-400">10</span>
-  }
-});
-
-<span class="text-gray-500">// Subscribe to new events</span>
-client.<span class="text-cyan-400">subscribe</span>({
-  blockchainEventAdded: {
-    contractAddress: <span class="text-green-400">'0x...'</span>
-  }
-}, (data) => {
-  console.<span class="text-cyan-400">log</span>(<span class="text-green-400">'New event:'</span>, data);
-});</code></pre>
+<span class="text-purple-400">const</span> { data } = <span class="text-purple-400">await</span> res.<span class="text-cyan-400">json</span>();
+console.<span class="text-cyan-400">log</span>(data.createBlockchainJob.id);</code></pre>
                 </div>
             </section>
             
@@ -516,41 +524,48 @@ client.<span class="text-cyan-400">subscribe</span>({
                 <h2 class="text-3xl font-bold mb-4">HTTP Examples (Python)</h2>
                 <p class="text-gray-400 mb-6">The GraphQL API works directly from any HTTP client. Below are ready-to-use fetch examples for Node.js and browsers.</p>
                 
-                <h3 class="text-xl font-semibold mb-4">Installation</h3>
+                <h3 class="text-xl font-semibold mb-4">Query Events</h3>
                 <div class="code-block p-4 mb-6">
-                    <pre class="font-mono text-sm"><code class="text-gray-300">pip install indexnode</code></pre>
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">import</span> requests
+
+query = <span class="text-green-400">"""
+query {
+  blockchainEvents(contractAddress: "0x...", limit: 10) {
+    id contractAddress eventName blockNumber
+    transactionHash contentHash ipfsCid
+  }
+}
+"""</span>
+
+res = requests.<span class="text-cyan-400">post</span>(
+    <span class="text-green-400">"https://api.indexnode.io/graphql"</span>,
+    json={<span class="text-green-400">"query"</span>: query},
+    headers={<span class="text-green-400">"Content-Type"</span>: <span class="text-green-400">"application/json"</span>}
+)
+events = res.<span class="text-cyan-400">json</span>()[<span class="text-green-400">"data"</span>][<span class="text-green-400">"blockchainEvents"</span>]
+<span class="text-purple-400">for</span> event <span class="text-purple-400">in</span> events:
+    <span class="text-cyan-400">print</span>(<span class="text-green-400">f"Block {event['blockNumber']}: {event['eventName']}"</span>)</code></pre>
                 </div>
-                
-                <h3 class="text-xl font-semibold mb-4">Usage</h3>
+
+                <h3 class="text-xl font-semibold mb-4">Create an Indexing Job</h3>
                 <div class="code-block p-4">
-                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-purple-400">from</span> indexnode <span class="text-purple-400">import</span> IndexNodeClient
+                    <pre class="font-mono text-sm"><code class="text-gray-300">mutation = <span class="text-green-400">"""
+mutation {
+  createBlockchainJob(input: {
+    contractAddress: "0x..."
+    chain: "ethereum"
+    fromBlock: 18500000
+  }) { id status }
+}
+"""</span>
 
-<span class="text-gray-500"># Initialize client</span>
-client = IndexNodeClient(api_key=<span class="text-green-400">"your_api_key"</span>)
-
-<span class="text-gray-500"># Query events</span>
-events = client.query(<span class="text-green-400">"""
-    query {
-        blockchainEvents(limit: 10) {
-            id
-            contractAddress
-            eventName
-            blockNumber
-        }
-    }
-"""</span>)
-
-<span class="text-purple-400">for</span> event <span class="text-purple-400">in</span> events[<span class="text-green-400">'blockchainEvents'</span>]:
-    <span class="text-cyan-400">print</span>(<span class="text-green-400">f"Block: {event['blockNumber']}"</span>)
-
-<span class="text-gray-500"># Verify event</span>
-verification = client.verify_event(event_id=<span class="text-green-400">"evt_abc123"</span>)
-<span class="text-purple-400">if</span> verification[<span class="text-green-400">'isValid'</span>]:
-    <span class="text-cyan-400">print</span>(<span class="text-green-400">"Event verified on-chain!"</span>)
-
-<span class="text-gray-500"># Upload to IPFS</span>
-result = client.upload_to_ipfs(content=<span class="text-green-400">"event_data"</span>, pin=<span class="text-blue-400">True</span>)
-<span class="text-cyan-400">print</span>(<span class="text-green-400">f"CID: {result['cid']}"</span>)</code></pre>
+res = requests.<span class="text-cyan-400">post</span>(
+    <span class="text-green-400">"https://api.indexnode.io/graphql"</span>,
+    json={<span class="text-green-400">"query"</span>: mutation},
+    headers={<span class="text-green-400">"Content-Type"</span>: <span class="text-green-400">"application/json"</span>}
+)
+job = res.<span class="text-cyan-400">json</span>()[<span class="text-green-400">"data"</span>][<span class="text-green-400">"createBlockchainJob"</span>]
+<span class="text-cyan-400">print</span>(<span class="text-green-400">f"Job created: {job['id']}"</span>)</code></pre>
                 </div>
             </section>
             
