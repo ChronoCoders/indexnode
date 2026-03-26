@@ -252,54 +252,51 @@
     <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
     <span class="text-purple-400">eventName</span>: <span class="text-green-400">"Transfer"</span>
     <span class="text-purple-400">limit</span>: <span class="text-green-400">50</span>
-    <span class="text-purple-400">offset</span>: <span class="text-green-400">0</span>
   ) {
     <span class="text-gray-300">id</span>
     <span class="text-gray-300">contractAddress</span>
     <span class="text-gray-300">eventName</span>
     <span class="text-gray-300">blockNumber</span>
     <span class="text-gray-300">transactionHash</span>
-    <span class="text-gray-300">timestamp</span>
-    <span class="text-gray-300">merkleProof</span>
-    <span class="text-gray-300">verifiedAt</span>
-  }
-}</code></pre>
-                    </div>
-                </div>
-                
-                <div class="mb-8">
-                    <h3 class="text-xl font-semibold mb-4">verifyMerkleProof</h3>
-                    <p class="text-gray-400 mb-4">Verify the authenticity of an indexed event.</p>
-                    <div class="code-block p-4">
-                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">VerifyEvent</span> {
-  <span class="text-gray-300">verifyMerkleProof</span>(
-    <span class="text-purple-400">eventId</span>: <span class="text-green-400">"evt_abc123"</span>
-  ) {
-    <span class="text-gray-300">isValid</span>
-    <span class="text-gray-300">blockNumber</span>
-    <span class="text-gray-300">transactionHash</span>
-    <span class="text-gray-300">merkleRoot</span>
-    <span class="text-gray-300">proof</span>
+    <span class="text-gray-300">eventData</span>
     <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">ipfsCid</span>
   }
 }</code></pre>
                     </div>
                 </div>
                 
                 <div class="mb-8">
-                    <h3 class="text-xl font-semibold mb-4">ipfsContent</h3>
-                    <p class="text-gray-400 mb-4">Retrieve content from IPFS by CID.</p>
+                    <h3 class="text-xl font-semibold mb-4">Verify an Event On-Chain</h3>
+                    <p class="text-gray-400 mb-4">IndexNode does not expose a separate verification query. Instead, use the <code class="bg-gray-800 px-1 rounded">contentHash</code> returned by <code class="bg-gray-800 px-1 rounded">blockchainEvents</code> to independently verify the event against the <code class="bg-gray-800 px-1 rounded">TimestampRegistry</code> contract on-chain. No dependency on IndexNode required.</p>
                     <div class="code-block p-4">
-                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetIPFSContent</span> {
-  <span class="text-gray-300">ipfsContent</span>(
-    <span class="text-purple-400">cid</span>: <span class="text-green-400">"QmX..."</span>
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-gray-500"># 1. Fetch the event's content hash</span>
+<span class="text-cyan-400">query</span> <span class="text-blue-400">GetEvent</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">1</span>
   ) {
-    <span class="text-gray-300">cid</span>
-    <span class="text-gray-300">content</span>
-    <span class="text-gray-300">pinnedAt</span>
-    <span class="text-gray-300">gatewayUrl</span>
+    <span class="text-gray-300">id</span>
+    <span class="text-gray-300">contentHash</span>
+    <span class="text-gray-300">transactionHash</span>
   }
-}</code></pre>
+}
+
+<span class="text-gray-500"># 2. Check the hash against TimestampRegistry on-chain</span>
+<span class="text-gray-500"># Call: TimestampRegistry.getCommitment(contentHash)</span>
+<span class="text-gray-500"># Returns the block number it was committed in — verifiable by anyone</span></code></pre>
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Retrieve IPFS Content</h3>
+                    <p class="text-gray-400 mb-4">Use the <code class="bg-gray-800 px-1 rounded">ipfsCid</code> from any event to fetch content directly from IPFS — no API call required. Content is pinned via Pinata and available on any public gateway.</p>
+                    <div class="code-block p-4">
+                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-gray-500"># Fetch via public gateway (no auth required)</span>
+https://gateway.pinata.cloud/ipfs/{ipfsCid}
+
+<span class="text-gray-500"># Or any other IPFS gateway</span>
+https://ipfs.io/ipfs/{ipfsCid}</code></pre>
                     </div>
                 </div>
             </section>
@@ -322,7 +319,6 @@
     <span class="text-gray-300">eventName</span>
     <span class="text-gray-300">blockNumber</span>
     <span class="text-gray-300">transactionHash</span>
-    <span class="text-gray-300">timestamp</span>
   }
 }</code></pre>
                     </div>
@@ -334,43 +330,25 @@
                 <h2 class="text-3xl font-bold mb-6">Mutations</h2>
                 
                 <div class="mb-8">
-                    <h3 class="text-xl font-semibold mb-4">createIndexingJob</h3>
+                    <h3 class="text-xl font-semibold mb-4">createBlockchainJob</h3>
                     <p class="text-gray-400 mb-4">Create a new blockchain indexing job.</p>
                     <div class="code-block p-4">
                         <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">CreateJob</span> {
-  <span class="text-gray-300">createIndexingJob</span>(
+  <span class="text-gray-300">createBlockchainJob</span>(
     <span class="text-purple-400">input</span>: {
       <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
-      <span class="text-purple-400">chain</span>: <span class="text-green-400">ETHEREUM</span>
-      <span class="text-purple-400">startBlock</span>: <span class="text-green-400">18500000</span>
+      <span class="text-purple-400">chain</span>: <span class="text-green-400">"ethereum"</span>
+      <span class="text-purple-400">fromBlock</span>: <span class="text-green-400">18500000</span>
     }
   ) {
     <span class="text-gray-300">id</span>
     <span class="text-gray-300">status</span>
-    <span class="text-gray-300">contractAddress</span>
     <span class="text-gray-300">createdAt</span>
   }
 }</code></pre>
                     </div>
                 </div>
                 
-                <div class="mb-8">
-                    <h3 class="text-xl font-semibold mb-4">uploadToIPFS</h3>
-                    <p class="text-gray-400 mb-4">Upload content to IPFS with automatic pinning.</p>
-                    <div class="code-block p-4">
-                        <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">UploadContent</span> {
-  <span class="text-gray-300">uploadToIPFS</span>(
-    <span class="text-purple-400">content</span>: <span class="text-green-400">"Your content here"</span>
-    <span class="text-purple-400">pin</span>: <span class="text-green-400">true</span>
-  ) {
-    <span class="text-gray-300">cid</span>
-    <span class="text-gray-300">url</span>
-    <span class="text-gray-300">gatewayUrl</span>
-    <span class="text-gray-300">pinnedAt</span>
-  }
-}</code></pre>
-                    </div>
-                </div>
             </section>
             
             <!-- On-Chain Timestamping -->
@@ -402,16 +380,15 @@
                 
                 <h3 class="text-xl font-semibold mb-4">Query Timestamp Proof</h3>
                 <div class="code-block p-4">
-                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetTimestamp</span> {
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetEvent</span> {
   <span class="text-gray-300">blockchainEvents</span>(
-    <span class="text-purple-400">id</span>: <span class="text-green-400">"evt_abc123"</span>
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">1</span>
   ) {
     <span class="text-gray-300">contentHash</span>
-    <span class="text-gray-300">merkleRoot</span>
+    <span class="text-gray-300">ipfsCid</span>
     <span class="text-gray-300">blockNumber</span>
     <span class="text-gray-300">transactionHash</span>
-    <span class="text-gray-300">verifiedAt</span>
-    <span class="text-gray-300">chain</span>
   }
 }</code></pre>
                 </div>
@@ -422,42 +399,6 @@
                 <h2 class="text-3xl font-bold mb-6">IPFS Storage</h2>
                 <p class="text-gray-400 mb-6">Store indexed blockchain data on IPFS with automatic pinning via Pinata.</p>
                 
-                <h3 class="text-xl font-semibold mb-4">Upload Content</h3>
-                <div class="code-block p-4 mb-6">
-                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">mutation</span> <span class="text-blue-400">UploadToIPFS</span> {
-  <span class="text-gray-300">uploadToIPFS</span>(
-    <span class="text-purple-400">content</span>: <span class="text-green-400">"event_data_json"</span>
-    <span class="text-purple-400">pin</span>: <span class="text-green-400">true</span>
-  ) {
-    <span class="text-gray-300">cid</span>
-    <span class="text-gray-300">url</span>
-    <span class="text-gray-300">gatewayUrl</span>
-    <span class="text-gray-300">size</span>
-    <span class="text-gray-300">pinnedAt</span>
-  }
-}
-
-<span class="text-gray-500"># Response:</span>
-{
-  <span class="text-purple-400">"cid"</span>: <span class="text-green-400">"QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"</span>,
-  <span class="text-purple-400">"url"</span>: <span class="text-green-400">"ipfs://QmYw..."</span>,
-  <span class="text-purple-400">"gatewayUrl"</span>: <span class="text-green-400">"https://gateway.pinata.cloud/ipfs/QmYw..."</span>,
-  <span class="text-purple-400">"pinnedAt"</span>: <span class="text-green-400">"2026-02-04T10:30:00Z"</span>
-}</code></pre>
-                </div>
-                
-                <h3 class="text-xl font-semibold mb-4">Retrieve Content</h3>
-                <div class="code-block p-4">
-                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">GetFromIPFS</span> {
-  <span class="text-gray-300">ipfsContent</span>(
-    <span class="text-purple-400">cid</span>: <span class="text-green-400">"QmYw..."</span>
-  ) {
-    <span class="text-gray-300">cid</span>
-    <span class="text-gray-300">content</span>
-    <span class="text-gray-300">gatewayUrl</span>
-  }
-}</code></pre>
-                </div>
                 
                 <div class="bg-cyan-600/10 border border-cyan-600/20 rounded-lg p-6 mt-6">
                     <p class="text-sm text-gray-300">
@@ -500,28 +441,20 @@
                 
                 <h3 class="text-xl font-semibold mb-4">Verify an Event</h3>
                 <div class="code-block p-4 mb-6">
-                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-cyan-400">query</span> <span class="text-blue-400">VerifyEvent</span> {
-  <span class="text-gray-300">verifyMerkleProof</span>(
-    <span class="text-purple-400">eventId</span>: <span class="text-green-400">"evt_abc123"</span>
+                    <pre class="font-mono text-sm"><code class="text-gray-300"><span class="text-gray-500"># Fetch contentHash from the API</span>
+<span class="text-cyan-400">query</span> <span class="text-blue-400">GetEvent</span> {
+  <span class="text-gray-300">blockchainEvents</span>(
+    <span class="text-purple-400">contractAddress</span>: <span class="text-green-400">"0x..."</span>
+    <span class="text-purple-400">limit</span>: <span class="text-green-400">1</span>
   ) {
-    <span class="text-gray-300">isValid</span>
+    <span class="text-gray-300">id</span>
     <span class="text-gray-300">contentHash</span>
-    <span class="text-gray-300">merkleRoot</span>
-    <span class="text-gray-300">proof</span>
-    <span class="text-gray-300">blockNumber</span>
-    <span class="text-gray-300">transactionHash</span>
   }
 }
 
-<span class="text-gray-500"># Response:</span>
-{
-  <span class="text-purple-400">"isValid"</span>: <span class="text-green-400">true</span>,
-  <span class="text-purple-400">"contentHash"</span>: <span class="text-green-400">"0x3d4f..."</span>,
-  <span class="text-purple-400">"merkleRoot"</span>: <span class="text-green-400">"0xa7c9..."</span>,
-  <span class="text-purple-400">"proof"</span>: [<span class="text-green-400">"0x1234..."</span>, <span class="text-green-400">"0x5678..."</span>],
-  <span class="text-purple-400">"blockNumber"</span>: <span class="text-green-400">18524031</span>,
-  <span class="text-purple-400">"transactionHash"</span>: <span class="text-green-400">"0xabcd..."</span>
-}</code></pre>
+<span class="text-gray-500"># Verify on-chain: TimestampRegistry.getCommitment(contentHash)</span>
+<span class="text-gray-500"># Returns: block number the hash was committed in</span>
+<span class="text-gray-500"># Independently verifiable on any Ethereum/Polygon RPC</span></code></pre>
                 </div>
                 
                 <h3 class="text-xl font-semibold mb-4">Manual Verification</h3>
@@ -543,8 +476,8 @@ console.<span class="text-cyan-400">log</span>(<span class="text-green-400">'Ver
             
             <!-- JavaScript SDK -->
             <section id="javascript" class="mb-16 scroll-mt-24">
-                <h2 class="text-3xl font-bold mb-4">JavaScript SDK <span class="text-sm font-normal bg-gray-700 text-gray-400 px-2 py-1 rounded ml-2">Planned</span></h2>
-                <p class="text-gray-400 mb-6">An official JavaScript client for Node.js and browsers is on the roadmap. In the meantime, the GraphQL API works directly from any HTTP client or fetch call — see the examples below for a starting point.</p>
+                <h2 class="text-3xl font-bold mb-4">HTTP Examples (JavaScript)</h2>
+                <p class="text-gray-400 mb-6">The GraphQL API works directly from any HTTP client. Below are ready-to-use fetch examples for Node.js and browsers.</p>
                 
                 <h3 class="text-xl font-semibold mb-4">Installation</h3>
                 <div class="code-block p-4 mb-6">
@@ -580,8 +513,8 @@ client.<span class="text-cyan-400">subscribe</span>({
             
             <!-- Python SDK -->
             <section id="python" class="mb-16 scroll-mt-24">
-                <h2 class="text-3xl font-bold mb-4">Python SDK <span class="text-sm font-normal bg-gray-700 text-gray-400 px-2 py-1 rounded ml-2">Planned</span></h2>
-                <p class="text-gray-400 mb-6">An official Python client is on the roadmap. Until then, the GraphQL API is fully accessible via any HTTP library such as <code class="font-mono text-cyan-400">httpx</code> or <code class="font-mono text-cyan-400">requests</code> — the usage examples below apply directly.</p>
+                <h2 class="text-3xl font-bold mb-4">HTTP Examples (Python)</h2>
+                <p class="text-gray-400 mb-6">The GraphQL API works directly from any HTTP client. Below are ready-to-use fetch examples for Node.js and browsers.</p>
                 
                 <h3 class="text-xl font-semibold mb-4">Installation</h3>
                 <div class="code-block p-4 mb-6">
@@ -747,7 +680,7 @@ swaps.<span class="text-cyan-400">forEach</span>(swap => {
                             </svg>
                         </summary>
                         <p class="mt-4 text-gray-400 leading-relaxed">
-                            Currently Ethereum and Polygon. We're adding support for Arbitrum, Optimism, and Base in Q2 2026.
+                            Ethereum and Polygon.
                         </p>
                     </details>
                     
@@ -771,7 +704,7 @@ swaps.<span class="text-cyan-400">forEach</span>(swap => {
                             </svg>
                         </summary>
                         <p class="mt-4 text-gray-400 leading-relaxed">
-                            Yes! Specify a startBlock when creating an indexing job to backfill historical data from any block.
+                            Yes! Specify a <code class="bg-gray-800 px-1 rounded">fromBlock</code> when creating an indexing job to backfill historical data from any block.
                         </p>
                     </details>
                     
