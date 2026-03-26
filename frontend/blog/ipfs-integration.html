@@ -104,28 +104,21 @@
                         With a CID in hand, you can fetch the underlying data from any public IPFS gateway or your own node. The content hash of what you retrieve will match the <code>contentHash</code> field in the API response — and that hash is committed on-chain via the TimestampRegistry contract, giving you an end-to-end verifiable chain of custody.
                     </p>
 
-                    <h2>Querying IPFS Content Metadata</h2>
+                    <h2>Fetching IPFS Content</h2>
                     <p>
-                        You can also query IPFS content metadata directly via the API to check pin status and size before fetching:
+                        There is no separate API call needed — use the <code>ipfsCid</code> from any event directly with any public IPFS gateway:
                     </p>
                     <div class="code-block">
-<pre><span style="color:#c084fc">query</span> {
-  <span style="color:#67e8f9">ipfsContent</span>(cid: <span style="color:#86efac">"bafybeig..."</span>) {
-    cid
-    contentHash
-    sizeBytes
-    pinned
-    createdAt
-  }
-}</pre>
+<pre><span style="color:#6b7280"># Fetch via Pinata gateway</span>
+https://gateway.pinata.cloud/ipfs/{ipfsCid}
+
+<span style="color:#6b7280"># Or any public IPFS gateway</span>
+https://ipfs.io/ipfs/{ipfsCid}</pre>
                     </div>
 
                     <h2>Availability</h2>
                     <p>
-                        IPFS storage is enabled for all Growth and Enterprise accounts. When creating an indexing job from the dashboard, toggle "Enable IPFS storage for indexed events" to activate it for that job. Historical jobs can be re-processed with IPFS enabled via the API.
-                    </p>
-                    <p>
-                        Starter accounts receive IPFS storage for the first 1,000 events to evaluate the feature before depositing INC.
+                        IPFS storage is enabled for Growth and Enterprise accounts. When creating an indexing job from the dashboard, indexed events are automatically pinned to IPFS via Pinata.
                     </p>
 
                     <h2>What This Means for Your Application</h2>
