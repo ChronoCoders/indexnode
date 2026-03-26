@@ -8,12 +8,12 @@ use chrono::Utc;
 use ethers::types::Address;
 use indexnode_core::{
     compute_merkle_root, hash_content, AIExtractor, BlockchainClient, Coordinator, Crawler,
-    CreditManager, DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig,
-    JobParams, JobQueue, JobStatus, MarketplaceClient, TimestampClient,
-    Worker as DistributedWorker, WorkerConfig as DistributedWorkerConfig,
+    CreditManager, DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig, JobParams, JobQueue,
+    JobStatus, MarketplaceClient, TimestampClient, Worker as DistributedWorker,
+    WorkerConfig as DistributedWorkerConfig,
 };
-use std::collections::HashMap;
 use sqlx::postgres::PgPoolOptions;
+use std::collections::HashMap;
 use std::env;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -183,14 +183,10 @@ async fn main() -> Result<()> {
     let mut app = AxumRouter::new()
         .merge(routes::create_routes(pool.clone()))
         .route("/metrics", axum::routing::get(metrics_handler))
-        .route("/graphql", axum::routing::post(graphql_handler))
-        .route_layer(axum::middleware::from_fn_with_state(
-            pool.clone(),
-            middleware::credits::check_credits,
-        ))
         .route_layer(per_user_limiter)
         .route_layer(axum::middleware::from_fn(middleware::require_auth))
         .merge(routes::create_public_routes(pool.clone()))
+        .route("/graphql", axum::routing::post(graphql_handler))
         .route(
             "/graphql/ws",
             axum::routing::any_service(GraphQLSubscription::new(schema.clone())),
@@ -470,28 +466,32 @@ async fn run_worker(
                                 .await
                                 {
                                     if let Ok(addr) = addr_str.parse::<Address>() {
-                                        if let Err(e) = credit_manager
+                                        match credit_manager
                                             .spend_credits(addr, cost, "http_crawl".to_string())
                                             .await
                                         {
-                                            tracing::error!(
-                                                "Failed to spend on-chain credits for job {}: {:?}",
-                                                job.id,
-                                                e
-                                            );
-                                        }
-                                        if let Err(e) = sqlx::query(
-                                            "UPDATE user_credits SET credit_balance = credit_balance - $1, total_spent = total_spent + $1 WHERE user_id = $2"
-                                        )
-                                        .bind(cost.as_u64() as i64)
-                                        .bind(job.user_id)
-                                        .execute(&pool)
-                                        .await
-                                        {
-                                            tracing::error!(
-                                                "Failed to update credit balance for job {}: {:?}",
-                                                job.id, e
-                                            );
+                                            Err(e) => {
+                                                tracing::error!(
+                                                    "Failed to spend on-chain credits for job {}: {:?}",
+                                                    job.id,
+                                                    e
+                                                );
+                                            }
+                                            Ok(_) => {
+                                                if let Err(e) = sqlx::query(
+                                                    "UPDATE user_credits SET credit_balance = credit_balance - $1, total_spent = total_spent + $1 WHERE user_id = $2"
+                                                )
+                                                .bind(cost.as_u64() as i64)
+                                                .bind(job.user_id)
+                                                .execute(&pool)
+                                                .await
+                                                {
+                                                    tracing::error!(
+                                                        "Failed to update credit balance for job {}: {:?}",
+                                                        job.id, e
+                                                    );
+                                                }
+                                            }
                                         }
                                         crate::metrics::record_http_request("GET", url, 200, 0.0);
                                     }
@@ -542,9 +542,7 @@ async fn run_worker(
                         }
                     }
                     JobParams::BlockchainIndex(_) => {
-                        match process_blockchain_index(&svc, &pool, &job)
-                        .await
-                        {
+                        match process_blockchain_index(&svc, &pool, &job).await {
                             Ok(IndexResult::Completed) => {
                                 queue
                                     .update_status(job.id, JobStatus::Completed, None)
@@ -690,7 +688,9 @@ async fn retry_pending_commits(
                     fire_webhooks(pool, job_id, user_id, "job.completed").await;
                     tracing::info!(
                         "Pending commit {} for job {} committed on attempt {}",
-                        commit_id, job_id, next_attempt
+                        commit_id,
+                        job_id,
+                        next_attempt
                     );
                 }
                 Err(e) => {
@@ -723,7 +723,9 @@ async fn retry_pending_commits(
                         fire_webhooks(pool, job_id, user_id, "job.failed").await;
                         tracing::error!(
                             "Commit {} for job {} permanently failed after {} retries",
-                            commit_id, job_id, MAX_COMMIT_RETRIES
+                            commit_id,
+                            job_id,
+                            MAX_COMMIT_RETRIES
                         );
                     } else {
                         let backoff_secs = 30i64 * 2i64.pow(next_attempt as u32);
@@ -744,7 +746,11 @@ async fn retry_pending_commits(
 
                         tracing::warn!(
                             "Commit {} for job {} failed (attempt {}/{}), next retry at {}",
-                            commit_id, job_id, next_attempt, MAX_COMMIT_RETRIES, next_retry_at
+                            commit_id,
+                            job_id,
+                            next_attempt,
+                            MAX_COMMIT_RETRIES,
+                            next_retry_at
                         );
                     }
                 }
@@ -780,12 +786,12 @@ async fn process_blockchain_index(
     pool: &sqlx::PgPool,
     job: &Job,
 ) -> Result<IndexResult> {
-    let chain_clients    = svc.chain_clients;
-    let ipfs             = svc.ipfs;
+    let chain_clients = svc.chain_clients;
+    let ipfs = svc.ipfs;
     let timestamp_client = svc.timestamp_client;
-    let credit_manager   = svc.credit_manager;
-    let ai               = svc.ai;
-    let ai_timeout       = svc.ai_timeout;
+    let credit_manager = svc.credit_manager;
+    let ai = svc.ai;
+    let ai_timeout = svc.ai_timeout;
 
     let config: JobConfig =
         serde_json::from_value(job.config.clone()).context("Failed to parse job config")?;
@@ -815,28 +821,32 @@ async fn process_blockchain_index(
     .await
     {
         if let Ok(addr) = addr_str.parse::<Address>() {
-            if let Err(e) = credit_manager
+            match credit_manager
                 .spend_credits(addr, cost, "blockchain_index".to_string())
                 .await
             {
-                tracing::error!(
-                    "Failed to spend on-chain credits for job {}: {:?}",
-                    job.id,
-                    e
-                );
-            }
-            if let Err(e) = sqlx::query(
-                "UPDATE user_credits SET credit_balance = credit_balance - $1, total_spent = total_spent + $1 WHERE user_id = $2"
-            )
-            .bind(cost.as_u64() as i64)
-            .bind(job.user_id)
-            .execute(pool)
-            .await
-            {
-                tracing::error!(
-                    "Failed to update credit balance for job {}: {:?}",
-                    job.id, e
-                );
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to spend on-chain credits for job {}: {:?}",
+                        job.id,
+                        e
+                    );
+                }
+                Ok(_) => {
+                    if let Err(e) = sqlx::query(
+                        "UPDATE user_credits SET credit_balance = credit_balance - $1, total_spent = total_spent + $1 WHERE user_id = $2"
+                    )
+                    .bind(cost.as_u64() as i64)
+                    .bind(job.user_id)
+                    .execute(pool)
+                    .await
+                    {
+                        tracing::error!(
+                            "Failed to update credit balance for job {}: {:?}",
+                            job.id, e
+                        );
+                    }
+                }
             }
         }
     }
@@ -845,9 +855,7 @@ async fn process_blockchain_index(
         .contract_address
         .parse()
         .context("Invalid contract address")?;
-    let to_block = params
-        .to_block
-        .unwrap_or(client.get_latest_block().await?);
+    let to_block = params.to_block.unwrap_or(client.get_latest_block().await?);
 
     // Fetch events for every requested event signature.
     let mut all_events = Vec::new();
@@ -932,13 +940,16 @@ async fn process_blockchain_index(
                     Err(_) => {
                         tracing::warn!(
                             "Job {}: AI extraction timed out for event {}",
-                            job.id, event_id
+                            job.id,
+                            event_id
                         );
                     }
                     Ok(Err(e)) => {
                         tracing::warn!(
                             "Job {}: AI extraction failed for event {}: {:?}",
-                            job.id, event_id, e
+                            job.id,
+                            event_id,
+                            e
                         );
                     }
                     Ok(Ok(result)) => {
@@ -1142,7 +1153,10 @@ async fn fire_webhooks(pool: &sqlx::PgPool, job_id: Uuid, user_id: Uuid, event: 
         let url: String = row.get("url");
         let secret: String = row.get("secret");
 
-        let sig = format!("sha256={}", hex::encode(hmac_sha256(secret.as_bytes(), &payload_bytes)));
+        let sig = format!(
+            "sha256={}",
+            hex::encode(hmac_sha256(secret.as_bytes(), &payload_bytes))
+        );
 
         match client
             .post(&url)
@@ -1156,13 +1170,17 @@ async fn fire_webhooks(pool: &sqlx::PgPool, job_id: Uuid, user_id: Uuid, event: 
             Ok(resp) if resp.status().is_success() => {
                 tracing::info!(
                     "Webhook delivered to {} for job {} ({})",
-                    url, job_id, event
+                    url,
+                    job_id,
+                    event
                 );
             }
             Ok(resp) => {
                 tracing::warn!(
                     "Webhook to {} returned {} for job {}",
-                    url, resp.status(), job_id
+                    url,
+                    resp.status(),
+                    job_id
                 );
             }
             Err(e) => {
