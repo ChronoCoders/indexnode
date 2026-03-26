@@ -157,27 +157,35 @@
 
             <!-- Create Job -->
             <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-6">Create Indexing Job</h2>
-                
+                <h2 class="text-2xl font-bold mb-6">Create Job</h2>
+
+                <!-- Tabs -->
+                <div class="flex gap-1 mb-6 bg-gray-800 rounded-lg p-1 w-fit">
+                    <button id="tabBlockchain" class="job-tab px-4 py-2 rounded-md text-sm font-medium transition bg-gray-700 text-gray-100" data-tab="blockchain">
+                        Blockchain Index
+                    </button>
+                    <button id="tabCrawl" class="job-tab px-4 py-2 rounded-md text-sm font-medium transition text-gray-400 hover:text-gray-200" data-tab="crawl">
+                        Web Crawl
+                    </button>
+                </div>
+
+                <!-- Blockchain Index Form -->
                 <form id="createJobForm" class="space-y-6">
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
                             <label for="contractAddress" class="block text-sm font-medium mb-2">Contract Address</label>
-                            <input 
-                                type="text" 
-                                id="contractAddress" 
-                                name="contractAddress" 
+                            <input
+                                type="text"
+                                id="contractAddress"
                                 placeholder="0x..."
                                 required
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 font-mono text-sm"
                             >
                         </div>
-                        
                         <div>
                             <label for="blockchain" class="block text-sm font-medium mb-2">Blockchain</label>
-                            <select 
-                                id="blockchain" 
-                                name="blockchain"
+                            <select
+                                id="blockchain"
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
                             >
                                 <option value="ethereum">Ethereum</option>
@@ -185,50 +193,65 @@
                             </select>
                         </div>
                     </div>
-                    
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
-                            <label for="eventName" class="block text-sm font-medium mb-2">Event Name (Optional)</label>
-                            <input 
-                                type="text" 
-                                id="eventName" 
-                                name="eventName" 
+                            <label for="eventName" class="block text-sm font-medium mb-2">Event Name <span class="text-gray-500">(optional)</span></label>
+                            <input
+                                type="text"
+                                id="eventName"
                                 placeholder="Transfer, Swap, etc."
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
                             >
                         </div>
-                        
                         <div>
-                            <label for="startBlock" class="block text-sm font-medium mb-2">Start Block (Optional)</label>
-                            <input 
-                                type="number" 
-                                id="startBlock" 
-                                name="startBlock" 
+                            <label for="startBlock" class="block text-sm font-medium mb-2">Start Block <span class="text-gray-500">(optional)</span></label>
+                            <input
+                                type="number"
+                                id="startBlock"
                                 placeholder="e.g. 21000000"
                                 class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
                             >
                         </div>
                     </div>
-                    
-                    <div class="flex items-start">
-                        <input 
-                            type="checkbox" 
-                            id="enableIPFS" 
-                            name="enableIPFS"
-                            class="w-4 h-4 mt-1 bg-gray-800 border-gray-700 rounded text-cyan-600 focus:ring-cyan-600"
-                        >
-                        <label for="enableIPFS" class="ml-2 text-sm text-gray-400">
-                            Enable IPFS storage for indexed events
-                        </label>
-                    </div>
-                    
                     <div class="flex items-center justify-between">
                         <p id="jobFeedback" class="hidden text-sm"></p>
-                        <button
-                            type="submit"
-                            class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition ml-auto"
-                        >
+                        <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition ml-auto">
                             Start Indexing
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Web Crawl Form -->
+                <form id="createCrawlForm" class="space-y-6 hidden">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label for="crawlUrl" class="block text-sm font-medium mb-2">URL</label>
+                            <input
+                                type="url"
+                                id="crawlUrl"
+                                placeholder="https://example.com"
+                                required
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 font-mono text-sm"
+                            >
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="maxPages" class="block text-sm font-medium mb-2">Max Pages <span class="text-gray-500">(optional, default 100)</span></label>
+                            <input
+                                type="number"
+                                id="maxPages"
+                                placeholder="100"
+                                min="1"
+                                max="500"
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100"
+                            >
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <p id="crawlFeedback" class="hidden text-sm"></p>
+                        <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-md font-medium transition ml-auto">
+                            Start Crawl
                         </button>
                     </div>
                 </form>

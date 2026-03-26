@@ -41,12 +41,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadAccountOverview();
     setupWalletSection();
+    setupJobTabs();
     setupCreateJobForm();
+    setupCreateCrawlForm();
     setupContractSearch();
     setupLogout();
 
     document.getElementById('refreshJobs')?.addEventListener('click', () => loadAccountOverview());
 });
+
+// ── Job Tabs ─────────────────────────────────────────────────────────────────
+
+function setupJobTabs() {
+    const tabs = document.querySelectorAll('.job-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+
+            tabs.forEach(t => {
+                const active = t.dataset.tab === target;
+                t.classList.toggle('bg-gray-700', active);
+                t.classList.toggle('text-gray-100', active);
+                t.classList.toggle('text-gray-400', !active);
+                t.classList.remove('hover:text-gray-200');
+                if (!active) t.classList.add('hover:text-gray-200');
+            });
+
+            document.getElementById('createJobForm').classList.toggle('hidden', target !== 'blockchain');
+            document.getElementById('createCrawlForm').classList.toggle('hidden', target !== 'crawl');
+        });
+    });
+}
 
 // ── Account Overview ──────────────────────────────────────────────────────────
 
@@ -282,6 +307,63 @@ function setupCreateJobForm() {
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Start Indexing';
+        }
+    });
+}
+
+// ── Create Crawl Form ────────────────────────────────────────────────────────
+
+function setupCreateCrawlForm() {
+    const form = document.getElementById('createCrawlForm');
+    if (!form) return;
+
+    const feedback = document.getElementById('crawlFeedback');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearFeedback(feedback);
+
+        const url = document.getElementById('crawlUrl').value.trim();
+        const maxPages = parseInt(document.getElementById('maxPages').value) || 100;
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        if (!url) {
+            showFeedback(feedback, 'error', 'URL is required.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Starting…';
+
+        try {
+            const res = await fetch('/api/v1/jobs', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    job_type: 'http_crawl',
+                    params: { url, max_pages: maxPages },
+                }),
+            });
+
+            if (res.status === 402) {
+                showFeedback(feedback, 'error', 'Insufficient credits. Deposit INC to continue.');
+                return;
+            }
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                throw new Error(text || `HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            showFeedback(feedback, 'success', `Crawl job created — ID: ${data.id} (${data.status})`);
+            form.reset();
+            loadAccountOverview();
+        } catch (err) {
+            showFeedback(feedback, 'error', `Failed to create job: ${err.message}`);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Start Crawl';
         }
     });
 }
