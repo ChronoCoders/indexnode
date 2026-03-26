@@ -13,7 +13,7 @@
 
     <link rel="stylesheet" href="css/tailwind.min.css">
     <style>
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; color-scheme: dark; }
         .spinner {
             border: 3px solid rgba(6, 182, 212, 0.1);
             border-top-color: #06b6d4;
@@ -50,10 +50,10 @@
                 </a>
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="dashboard.html" class="text-gray-400 hover:text-cyan-400 transition">Dashboard</a>
-                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
-                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
-                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
                     <a href="account.html" class="text-cyan-400 transition font-medium">Account</a>
+                    <button id="walletBtn" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-4 py-1.5 rounded-full text-sm font-medium transition">
+                        Connect Wallet
+                    </button>
                     <button data-logout class="text-gray-400 hover:text-cyan-400 transition">Logout</button>
                 </div>
             </div>
@@ -101,6 +101,91 @@
                     <a href="forgot-password.html" class="inline-block bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-md text-sm font-medium transition">
                         Send password reset email →
                     </a>
+                </div>
+            </section>
+
+            <!-- ── INC Credits ────────────────────────────────────────────── -->
+            <section id="credits" class="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-1">INC Credits</h2>
+                <p class="text-gray-500 text-sm mb-6">Deposit INC tokens as platform credits or withdraw unused credits back to your wallet.</p>
+
+                <!-- Wallet not connected -->
+                <div id="walletDisconnected">
+                    <div class="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
+                        <div>
+                            <p class="text-sm font-medium text-gray-200">No wallet connected</p>
+                            <p class="text-xs text-gray-500 mt-0.5">MetaMask, Coinbase Wallet, Brave, or any EIP-1193 wallet</p>
+                        </div>
+                        <button id="connectWalletBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md text-sm font-medium transition shrink-0 ml-4">
+                            Connect Wallet
+                        </button>
+                    </div>
+                    <p id="walletConnectError" class="hidden mt-3 text-sm text-red-400"></p>
+                </div>
+
+                <!-- Wallet connected -->
+                <div id="walletConnected" class="hidden space-y-4">
+
+                    <!-- Status bar -->
+                    <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+                            <span class="font-mono text-sm text-gray-200" id="walletAddress">—</span>
+                            <span class="text-xs text-gray-400 bg-gray-700 rounded px-2 py-0.5" id="walletChainBadge">—</span>
+                        </div>
+                        <button id="disconnectWalletBtn" class="text-xs text-gray-500 hover:text-gray-300 transition">Disconnect</button>
+                    </div>
+
+                    <!-- Unsupported chain warning -->
+                    <div id="unsupportedChain" class="hidden p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg flex items-center justify-between gap-4">
+                        <p class="text-sm text-yellow-300">⚠ No INC contract on this chain yet.</p>
+                        <button id="switchAnvilBtn" class="shrink-0 bg-yellow-700/50 hover:bg-yellow-700 text-yellow-200 px-3 py-1.5 rounded-md text-xs font-medium transition">
+                            Switch to Local Anvil
+                        </button>
+                    </div>
+
+                    <!-- Balances -->
+                    <div id="walletBalances" class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Wallet Balance</p>
+                            <p class="text-xl font-bold text-gray-100" id="incWalletBalance">—</p>
+                            <p class="text-xs text-gray-500 mt-1">INC available to deposit</p>
+                        </div>
+                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Platform Credits</p>
+                            <p class="text-xl font-bold text-cyan-400" id="incCreditBalance">—</p>
+                            <p class="text-xs text-gray-500 mt-1">INC locked for platform use</p>
+                        </div>
+                    </div>
+
+                    <!-- Deposit -->
+                    <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                        <p class="text-sm font-semibold text-gray-100 mb-0.5">Deposit INC</p>
+                        <p class="text-xs text-gray-500 mb-3">Lock tokens as credits &mdash; crawl job: 100 INC &middot; event index: 50 INC</p>
+                        <div class="flex gap-3">
+                            <input type="number" id="depositAmount" min="1" step="1" placeholder="Amount (INC)"
+                                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 text-sm">
+                            <button id="depositBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-md text-sm font-medium transition shrink-0">
+                                Deposit
+                            </button>
+                        </div>
+                        <p id="depositFeedback" class="hidden mt-2 text-xs"></p>
+                    </div>
+
+                    <!-- Withdraw -->
+                    <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                        <p class="text-sm font-semibold text-gray-100 mb-0.5">Withdraw Credits</p>
+                        <p class="text-xs text-gray-500 mb-3">Unlock unused credits back to your wallet</p>
+                        <div class="flex gap-3">
+                            <input type="number" id="withdrawAmount" min="1" step="1" placeholder="Amount (INC)"
+                                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:border-cyan-600 text-gray-100 text-sm">
+                            <button id="withdrawBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-md text-sm font-medium transition shrink-0">
+                                Withdraw
+                            </button>
+                        </div>
+                        <p id="withdrawFeedback" class="hidden mt-2 text-xs"></p>
+                    </div>
+
                 </div>
             </section>
 
@@ -230,49 +315,9 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-gray-800 bg-gray-950">
-        <div class="container mx-auto px-6 py-12">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
-                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Product</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
-                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
-                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
-                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Company</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
-                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
-                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Legal</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
-                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
-                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
-                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
-            </div>
-            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
-                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
-            </div>
-        </div>
-    </footer>
 
+<script src="js/ethers.umd.min.js"></script>
+    <script src="js/wallet.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/account.js"></script>
 </body>

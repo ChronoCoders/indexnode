@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title DataMarketplace
@@ -12,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  *         Payment is made in INC (CreditToken).
  */
 contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+    using SafeERC20 for IERC20;
     // ── Reentrancy guard ──────────────────────────────────────────────────────
     uint256 private _reentrancyStatus;
     uint256 private constant _NOT_ENTERED = 1;
@@ -23,6 +25,7 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _;
         _reentrancyStatus = _NOT_ENTERED;
     }
+    // NOTE: Only INC is supported as the payment token for now.
     IERC20 public paymentToken;
     uint256 public platformFeePercent;
 
@@ -108,14 +111,8 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 fee         = (platformFeePercent * l.price) / 100;
         uint256 sellerShare = l.price - fee;
 
-        require(
-            paymentToken.transferFrom(msg.sender, l.seller, sellerShare),
-            "Payment to seller failed"
-        );
-        require(
-            paymentToken.transferFrom(msg.sender, address(this), fee),
-            "Platform fee transfer failed"
-        );
+        paymentToken.safeTransferFrom(msg.sender, l.seller, sellerShare);
+        paymentToken.safeTransferFrom(msg.sender, address(this), fee);
 
         purchaseCount++;
         purchases[purchaseCount] = Purchase({
@@ -145,9 +142,12 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function withdrawFees(address to) external onlyOwner {
         uint256 bal = paymentToken.balanceOf(address(this));
         require(bal > 0, "Nothing to withdraw");
-        require(paymentToken.transfer(to, bal), "Withdraw failed");
+        paymentToken.safeTransfer(to, bal);
     }
 
     // ── UUPS ──────────────────────────────────────────────────────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    // ── Storage gap ───────────────────────────────────────────────────────────
+    uint256[50] private __gap;
 }

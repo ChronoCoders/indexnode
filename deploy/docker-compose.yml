@@ -3,6 +3,8 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
+    ports:
+      - "55432:5432"
     environment:
       POSTGRES_DB: indexnode
       POSTGRES_USER: indexnode
@@ -19,6 +21,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    ports:
+      - "16379:6379"
     volumes:
       - redis_data:/data
     healthcheck:

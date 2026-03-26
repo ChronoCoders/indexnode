@@ -1,10 +1,10 @@
 class Auth {
     isAuthenticated() {
-        return !!localStorage.getItem('token');
+        return hasAuthCookie();
     }
 
     getToken() {
-        return localStorage.getItem('token');
+        return null;
     }
 
     getUserId() {
@@ -20,7 +20,7 @@ class Auth {
     }
 
     logout() {
-        localStorage.removeItem('token');
+        fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
         localStorage.removeItem('user_id');
         window.location.href = 'index.html';
     }
@@ -32,6 +32,10 @@ class Auth {
         }
         return true;
     }
+}
+
+function hasAuthCookie() {
+    return document.cookie.split(';').some(c => c.trim().startsWith('auth_present='));
 }
 
 window.auth = new Auth();

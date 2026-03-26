@@ -16,13 +16,7 @@ use sqlx::PgPool;
 /// into request extensions so downstream handlers and GraphQL resolvers can
 /// access them via `Extension<Uuid>` / `Extension<UserRole>`.
 pub async fn require_auth(mut req: Request, next: Next) -> Result<Response, StatusCode> {
-    let token = req
-        .headers()
-        .get("authorization")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix("Bearer "))
-        .ok_or(StatusCode::UNAUTHORIZED)?
-        .to_owned();
+    let token = extract_token(&req).ok_or(StatusCode::UNAUTHORIZED)?;
 
     if token.starts_with("ink_") {
         // API key path — pool is available via Extension added in main.rs.
@@ -80,4 +74,30 @@ pub async fn require_auth(mut req: Request, next: Next) -> Result<Response, Stat
     }
 
     Ok(next.run(req).await)
+}
+
+fn extract_token(req: &Request) -> Option<String> {
+    if let Some(token) = extract_bearer(req) {
+        return Some(token);
+    }
+    extract_cookie(req, "auth_token")
+}
+
+fn extract_bearer(req: &Request) -> Option<String> {
+    req.headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .map(|v| v.to_owned())
+}
+
+fn extract_cookie(req: &Request, name: &str) -> Option<String> {
+    let header = req.headers().get("cookie")?.to_str().ok()?;
+    for part in header.split(';') {
+        let p = part.trim();
+        if let Some(value) = p.strip_prefix(&format!("{}=", name)) {
+            return Some(value.to_string());
+        }
+    }
+    None
 }

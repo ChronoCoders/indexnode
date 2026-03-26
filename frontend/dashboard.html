@@ -15,6 +15,7 @@
 <style>
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color-scheme: dark;
         }
         
         .spinner {
@@ -49,11 +50,6 @@
                     <span class="text-2xl font-bold text-gray-100 tracking-tight">IndexNode</span>
                 </a>
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="features.html" class="text-gray-400 hover:text-cyan-400 transition">Features</a>
-                    <a href="use-cases.html" class="text-gray-400 hover:text-cyan-400 transition">Use Cases</a>
-                    <a href="pricing.html" class="text-gray-400 hover:text-cyan-400 transition">Pricing</a>
-                    <a href="docs.html" class="text-gray-400 hover:text-cyan-400 transition">Docs</a>
-                    <a href="blog.html" class="text-gray-400 hover:text-cyan-400 transition">Blog</a>
                     <a href="account.html" class="text-gray-400 hover:text-cyan-400 transition">Account</a>
                     <button data-logout class="text-gray-400 hover:text-cyan-400 transition">Logout</button>
                 </div>
@@ -71,14 +67,13 @@
                 <p class="text-gray-400">Monitor your blockchain indexing activity</p>
             </div>
             
-            <!-- Stats Grid -->
+            <!-- Activity Snapshot -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">Requests This Period</p>
-                            <p class="text-3xl font-bold text-cyan-400" data-stat="quota-used">—</p>
+                            <p class="text-gray-400 text-sm mb-1">Total Events</p>
+                            <p class="text-3xl font-bold text-cyan-400" data-stat="events-total">—</p>
                         </div>
                         <div class="w-12 h-12 bg-cyan-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
@@ -86,58 +81,55 @@
                             </svg>
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500"><span data-stat="quota-remaining">—</span> remaining this period</p>
+                    <p class="text-sm text-gray-500">Updates after you fetch a contract</p>
                 </div>
 
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">Plan Tier</p>
-                            <p class="text-3xl font-bold capitalize" data-stat="tier">—</p>
-                        </div>
-                        <div class="w-12 h-12 bg-blue-600/10 rounded-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
-                    </div>
-                    <a href="pricing.html" class="text-sm text-cyan-400 hover:text-cyan-300">View plans →</a>
-                </div>
-
-                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <p class="text-gray-400 text-sm mb-1">Credit Balance</p>
-                            <p class="text-3xl font-bold"><span data-stat="credits">—</span> <span class="text-lg font-medium text-cyan-400">credits</span></p>
+                            <p class="text-gray-400 text-sm mb-1">Verified Hashes</p>
+                            <p class="text-3xl font-bold" data-stat="events-verified">—</p>
                         </div>
                         <div class="w-12 h-12 bg-green-600/10 rounded-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400">
                                 <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
-                                <path d="M12 18V6"></path>
+                                <path d="m9 12 2 2 4-4"></path>
                             </svg>
                         </div>
                     </div>
-                    <a href="pricing.html" class="text-sm text-cyan-400 hover:text-cyan-300">Deposit INC →</a>
+                    <p class="text-sm text-gray-500">Events with content hashes</p>
                 </div>
 
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <p class="text-gray-400 text-sm mb-1">GraphQL Endpoint</p>
-                            <p class="text-lg font-mono text-gray-300 mt-2">/graphql</p>
+                            <p class="text-gray-400 text-sm mb-1">IPFS CIDs</p>
+                            <p class="text-3xl font-bold" data-stat="events-ipfs">—</p>
                         </div>
-                        <div class="w-12 h-12 bg-purple-600/10 rounded-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                <path d="m9 12 2 2 4-4"></path>
+                        <div class="w-12 h-12 bg-blue-600/10 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
+                                <path d="M21 16a4 4 0 0 1-4 4H7a5 5 0 1 1 0-10h10a4 4 0 0 1 4 4z"></path>
                             </svg>
                         </div>
                     </div>
-                    <a href="/graphql/playground" target="_blank" class="text-sm text-cyan-400 hover:text-cyan-300">Open playground →</a>
+                    <p class="text-sm text-gray-500">Pinned or linked events</p>
                 </div>
-                
+
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-gray-400 text-sm mb-1">Latest Block</p>
+                            <p class="text-3xl font-bold" data-stat="events-latest-block">—</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-600/10 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
+                                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                <path d="M7 7h10M7 12h10M7 17h6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500">From the most recent event</p>
+                </div>
             </div>
             
             <!-- Wallet Registration -->
@@ -289,47 +281,6 @@
     </main>
     
     <!-- Footer -->
-    <footer class="border-t border-gray-800 bg-gray-950">
-        <div class="container mx-auto px-6 py-12">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <span class="block text-2xl font-bold text-gray-100 tracking-tight mb-4">IndexNode</span>
-                    <p class="text-gray-400 text-sm">Trustless Blockchain Intelligence</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Product</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="features.html" class="hover:text-cyan-400 transition">Features</a></li>
-                        <li><a href="pricing.html" class="hover:text-cyan-400 transition">Pricing</a></li>
-                        <li><a href="use-cases.html" class="hover:text-cyan-400 transition">Use Cases</a></li>
-                        <li><a href="docs.html" class="hover:text-cyan-400 transition">Documentation</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Company</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="about.html" class="hover:text-cyan-400 transition">About</a></li>
-                        <li><a href="https://github.com/ChronoCoders/indexnode" class="hover:text-cyan-400 transition" target="_blank">GitHub</a></li>
-                        <li><a href="blog.html" class="hover:text-cyan-400 transition">Blog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Legal</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="privacy.html" class="hover:text-cyan-400 transition">Privacy</a></li>
-                        <li><a href="terms.html" class="hover:text-cyan-400 transition">Terms</a></li>
-                        <li><a href="disclaimer.html" class="hover:text-cyan-400 transition">Disclaimer</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
-                <p>&copy; 2026 Distributed Systems Labs, LLC. All rights reserved.</p>
-            </div>
-            <div class="mt-6 text-center text-gray-600 text-xs max-w-3xl mx-auto">
-                <p>INC tokens are utility tokens for platform access only and do not constitute an investment, security, or financial instrument. Nothing on this platform constitutes financial or investment advice. Use of this platform involves risk.</p>
-            </div>
-        </div>
-    </footer>
     
     <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
