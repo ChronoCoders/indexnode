@@ -104,16 +104,27 @@
                         With a CID in hand, you can fetch the underlying data from any public IPFS gateway or your own node. The content hash of what you retrieve will match the <code>contentHash</code> field in the API response — and that hash is committed on-chain via the TimestampRegistry contract, giving you an end-to-end verifiable chain of custody.
                     </p>
 
-                    <h2>Fetching IPFS Content</h2>
+                    <h2>Querying IPFS Content Metadata</h2>
                     <p>
-                        There is no separate API call needed — use the <code>ipfsCid</code> from any event directly with any public IPFS gateway:
+                        Use the <code>ipfsContent</code> query to check pin status and metadata for any stored CID:
                     </p>
                     <div class="code-block">
-<pre><span style="color:#6b7280"># Fetch via Pinata gateway</span>
-https://gateway.pinata.cloud/ipfs/{ipfsCid}
-
-<span style="color:#6b7280"># Or any public IPFS gateway</span>
-https://ipfs.io/ipfs/{ipfsCid}</pre>
+<pre><span style="color:#c084fc">query</span> {
+  <span style="color:#67e8f9">ipfsContent</span>(cid: <span style="color:#86efac">"QmYw..."</span>) {
+    cid
+    contentHash
+    sizeBytes
+    pinned
+    createdAt
+  }
+}</pre>
+                    </div>
+                    <p>
+                        To fetch the underlying data, use the CID with any public IPFS gateway — no API call required:
+                    </p>
+                    <div class="code-block">
+<pre>https://gateway.pinata.cloud/ipfs/{cid}
+https://ipfs.io/ipfs/{cid}</pre>
                     </div>
 
                     <h2>Availability</h2>
