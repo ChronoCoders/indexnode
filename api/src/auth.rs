@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -92,7 +92,9 @@ pub fn create_token(user_id: Uuid, role: &str, remember_me: bool) -> Result<Stri
 pub fn validate_token(token: &str) -> Result<AuthInfo> {
     let secret = jwt_secret()?;
 
-    let mut validation = Validation::default();
+    // Pin to HS256 explicitly so tokens claiming alg=none or any asymmetric
+    // algorithm are rejected, regardless of how jsonwebtoken's defaults evolve.
+    let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
 
     let token_data = decode::<Claims>(

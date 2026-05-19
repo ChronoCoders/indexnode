@@ -34,6 +34,11 @@ pub async fn validate_request_security(req: Request, next: Next) -> Result<Respo
         header::REFERRER_POLICY,
         HeaderValue::from_static("strict-origin-when-cross-origin"),
     );
+    // Fallback CSP for deployments without nginx in front. When the production
+    // nginx config (deploy/nginx.conf) is used, its `add_header` directive
+    // emits a richer CSP that supersedes this one — browsers honour the
+    // first/strictest header set, and nginx's directive is applied to the
+    // response after this middleware returns it.
     headers.insert(
         header::CONTENT_SECURITY_POLICY,
         HeaderValue::from_static("default-src 'self'"),
