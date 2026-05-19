@@ -1,223 +1,158 @@
 # IndexNode
 
-Trustless blockchain intelligence platform. Indexes blockchain events, crawls web content, stores data on IPFS, and provides cryptographic proof of existence — all queryable via a GraphQL API.
+Trustless blockchain intelligence platform — indexes blockchain events, crawls web content, stores data on IPFS, and provides cryptographic proof of existence via a GraphQL/REST API.
 
 ## What it does
 
-- **Blockchain indexing** — subscribes to EVM contract events and stores them with Merkle-verified content hashes
-- **Web crawling** — HTTP and headless-browser crawls with AI-powered data extraction
-- **IPFS storage** — content-addressed storage for crawl results and indexed datasets
-- **Timestamp registry** — commits content hashes on-chain for provable existence proofs
-- **Data marketplace** — buy and sell indexed datasets using on-chain credit tokens
-- **Credit system** — ERC-20 token (`INC`) gates API usage; crawl jobs cost 100 credits, event indexing costs 50
+- **Blockchain event indexing.** Watches Ethereum and Polygon contracts for configured event signatures, normalises and stores them with a content hash for each event batch.
+- **Web crawling.** HTTP crawler with SSRF protection (private/loopback/link-local IPv4 and IPv6 ranges rejected after DNS resolution).
+- **IPFS storage.** Every blockchain event batch is uploaded and pinned. Pinata is used when `PINATA_JWT` is configured; otherwise a local IPFS daemon (default `http://127.0.0.1:5001`).
+- **On-chain timestamp registry.** Merkle root of indexed batches is committed to the `TimestampRegistry` UUPS contract, giving permissionless proof-of-existence for any indexed payload.
+- **AI extraction.** Optional structured-data extraction from event payloads via the Anthropic API.
+- **Data marketplace.** Sellers list datasets at a price in INC; buyers pay through the `DataMarketplace` UUPS contract; a 5% platform fee accrues to the contract for `withdrawFees`.
+- **Credit system.** ERC-20 `CreditToken` (INC, 1B fixed supply). Users lock tokens as platform credits; the worker burns credits on job execution. 1000 free credits granted on signup.
 
 ## Architecture
 
-Everything runs in a single binary (`indexnode-api`). The HTTP server and the job worker are concurrent components of the same process — the worker runs in a dedicated OS thread sharing the PostgreSQL connection pool with the API layer.
+Single Rust binary (`indexnode-api`). The HTTP server and the job worker run as concurrent components of the same process — the worker lives in a dedicated OS thread sharing the Postgres connection pool with the Axum server.
+
+- **API layer** — Axum HTTP server, `async-graphql` for GraphQL queries / mutations / WebSocket subscriptions, JWT auth via HttpOnly cookie.
+- **Worker** — pulls queued jobs from the `jobs` table, executes them (crawl or blockchain indexing), pins results to IPFS, commits Merkle roots on-chain, calls `spendCredits` on the `CreditToken` contract.
+- **PostgreSQL** is the source of truth for users, credits, jobs, results, indexed events, IPFS records, API keys, webhook subscriptions, audit log, and password-reset tokens. Migrations live in `migrations/` and run automatically on API startup.
+- **Frontend** — under rewrite. The previous static HTML + vanilla JS surface has been removed; a Next.js / TypeScript / Tailwind frontend will replace it. The Rust binary no longer serves any static assets — it speaks REST and GraphQL only.
+- **Contracts** — three Solidity contracts deployed by `script/Deploy.s.sol`. The deploy script transfers ownership to a multisig in the same broadcast, so the deployer EOA has no upgrade authority after the transaction completes.
 
 ```
-┌─────────────────┐    GraphQL / REST    ┌───────────────────────────────────────┐
-│   Client / UI   │ ──────────────────►  │              indexnode-api            │
-└─────────────────┘                      │                                       │
-                                         │  ┌──────────────┐  ┌────────────────┐ │
-                                         │  │  HTTP layer  │  │  Worker thread │ │
-                                         │  │              │  │                │ │
-                                         │  │ GraphQL API  │  │ Crawl jobs     │ │
-                                         │  │ Auth / RBAC  │  │ Blockchain idx │ │
-                                         │  │ Rate limiter │  │ AI extraction  │ │
-                                         │  │ Credit check │  │ IPFS upload    │ │
-                                         │  └──────┬───────┘  └───────┬────────┘ │
-                                         │         │  shared PG pool  │          │
-                                         └─────────┼──────────────────┼──────────┘
-                                                   │                  │
-                                          ┌────────▼──────────────────▼────────┐
-                                          │            PostgreSQL              │
-                                          │  users · jobs · events · audit log │
-                                          └────────────────────────────────────┘
-                                         ┌────────────────────┬─────────────────┐
-                                         ▼                    ▼                 ▼
-                                    Ethereum RPC           IPFS node       Anthropic API
-                                 (CreditManager,        (event storage,    (AI extraction)
-                                            MarketplaceClient,      content pin)
-                                                       BlockchainClient)
+api/        Axum HTTP server, GraphQL schema, auth middleware, embedded worker
+core/       Crawler, blockchain client, IPFS storage, credit / timestamp / marketplace clients, Merkle, job queue
+cli/        CLI for crawl + status (out of the cargo workspace by design)
+contracts/  Solidity contracts and tests (Foundry)
+deploy/     docker-compose, nginx
+migrations/ Postgres migrations
+scripts/    Operational scripts (backup, deploy, security audit)
 ```
-
-> Both the HTTP layer and the worker thread connect to Ethereum RPC — the HTTP layer for credit and marketplace contract calls, the worker for blockchain event indexing.
-
-**Crates**
-
-| Crate | Description |
-|---|---|
-| `indexnode-core` | Crawler, blockchain client, IPFS, marketplace, Merkle, job queue |
-| `indexnode-api` | Axum HTTP server, GraphQL schema, auth, middleware, embedded worker |
-
-**Infrastructure**
-
-| Service | Role |
-|---|---|
-| PostgreSQL | Primary store — jobs, events, crawl results, users, audit log |
-| IPFS | Content-addressed storage for indexed event data |
-| Ethereum RPC | Credit/marketplace contract calls and blockchain event indexing |
-| Anthropic API | AI-powered structured data extraction from indexed events |
 
 ## Prerequisites
 
-- Rust 1.75+
-- PostgreSQL 15+
-- An Ethereum RPC endpoint (e.g. Alchemy, Infura, or local node)
-- An IPFS node (local or Infura IPFS)
-- Anthropic API key (for AI extraction)
+- **Rust** 1.75+
+- **PostgreSQL** 15+
+- **Ethereum WebSocket RPC** (mainnet, Sepolia, or a local Anvil)
+- **IPFS** — Pinata account (recommended) or a local IPFS daemon
+- **Foundry** for contract work (`forge`, `cast`)
+- **Anthropic API key** (optional; enables AI extraction)
 
 ## Setup
 
-### 1. Environment variables
+### 1. Environment
 
-Copy and fill in:
+Copy `.env.example` to `.env` and fill in the required values. The file documents which variables are required vs optional and explains the security-critical ones (`JWT_SECRET`, `COOKIE_SECURE`, `MULTISIG_OWNER` for deploys).
 
-```bash
-cp .env.example .env
-```
-
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
-| `JWT_SECRET` | Secret for signing JWTs (min 32 chars) |
-| `ETHEREUM_RPC_URL` | EVM-compatible WebSocket RPC URL |
-| `CREDIT_CONTRACT_ADDRESS` | Deployed `CreditToken` contract address |
-| `CREDIT_PRIVATE_KEY` | Private key of the contract owner wallet |
-| `MARKETPLACE_CONTRACT_ADDRESS` | Deployed `DataMarketplace` contract address |
-| `ANTHROPIC_API_KEY` | Claude API key for AI extraction |
-| `IPFS_API_URL` | IPFS HTTP API (default: `http://127.0.0.1:5001`) |
-| `ALLOWED_ORIGIN` | CORS origin (e.g. `https://app.example.com`) |
-| `SERVE_FRONTEND` | Set to `true` to serve the `frontend/` directory |
-| `CRAWL_TIMEOUT_SECS` | Crawl timeout in seconds (default: `120`) |
-| `AI_TIMEOUT_SECS` | AI extraction timeout in seconds (default: `30`) |
-| `WEBHOOK_TIMEOUT_SECS` | Per-webhook HTTP request timeout in seconds (default: `10`) |
-| `BROWSER_DISABLE_SANDBOX` | Set to `1` only in Docker environments that lack user namespaces |
-
-### 2. Database migrations
+### 2. Database
 
 ```bash
+createdb indexnode
 sqlx migrate run
 ```
 
-Migrations live in `migrations/` and are numbered sequentially (`001` through `018`).
+Migrations are also applied automatically when `indexnode-api` starts, so manual `sqlx migrate run` is optional.
 
 ### 3. Run locally
 
 ```bash
-cargo run --bin indexnode-api
+cargo run -p indexnode-api
 ```
 
-The worker runs embedded in the same process — no separate binary needed.
+The API listens on `PORT` (default 3000). It serves REST under `/api/v1/`, GraphQL under `/graphql`, and WebSocket subscriptions under `/graphql/ws`. Authentication uses an HttpOnly cookie set on `/api/v1/auth/login`; client `fetch` calls should pass `credentials: 'include'`.
 
-### 4. Docker (production)
+### 4. Docker
 
 ```bash
 docker compose -f deploy/docker-compose.yml up -d
 ```
 
-Or use the deploy script (requires `.env.production`):
+This brings up Postgres, the API, and nginx with the production security headers (HSTS, CSP, X-Frame-Options, etc.).
+
+### 5. Contracts
 
 ```bash
-./scripts/deploy.sh
+forge build
+forge test
 ```
 
-## API
+To deploy to a public network, fill in `.env.testnet` (including `MULTISIG_OWNER` and the six wallet addresses) and run:
 
-### Authentication
-
-```
-POST /api/v1/auth/register   { "email": "...", "password": "..." }
-POST /api/v1/auth/login      { "email": "...", "password": "..." }
-```
-
-Returns a JWT. Include it on subsequent requests:
-
-```
-Authorization: Bearer <token>
+```bash
+source .env.testnet
+forge script script/Deploy.s.sol --rpc-url sepolia \
+  --private-key $DEPLOYER_PRIVATE_KEY --broadcast --verify
 ```
 
-Password requirements: 12+ characters, uppercase, lowercase, digit, special character.
+## API overview
 
-### REST endpoints
+### REST
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/v1/jobs` | Create an HTTP crawl job |
-| `GET` | `/api/v1/jobs/:id` | Get job status |
-| `POST` | `/api/v1/verify` | Verify a content hash against on-chain commits |
-| `POST` | `/api/v1/api-keys` | Create an API key |
-| `GET` | `/api/v1/api-keys` | List API keys |
-| `DELETE` | `/api/v1/api-keys/:id` | Revoke an API key |
-| `POST` | `/api/v1/webhooks` | Register a webhook endpoint |
-| `GET` | `/api/v1/webhooks` | List webhook subscriptions |
-| `DELETE` | `/api/v1/webhooks/:id` | Delete a webhook subscription |
-| `GET` | `/metrics` | Prometheus metrics |
+| Method | Path                          | Description                                  |
+| ------ | ----------------------------- | -------------------------------------------- |
+| POST   | `/api/v1/auth/register`       | Create account, returns `user_id` (cookie auth) |
+| POST   | `/api/v1/auth/login`          | Authenticate, sets `auth_token` HttpOnly cookie |
+| POST   | `/api/v1/auth/logout`         | Clear auth cookies                           |
+| GET    | `/api/v1/me`                  | Profile (email, role, created_at)            |
+| POST   | `/api/v1/jobs`                | Submit a web crawl job (50 credits)          |
+| GET    | `/api/v1/jobs/{id}`           | Job detail, scoped to caller                 |
+| GET    | `/api/v1/api-keys`            | List the caller's API keys                   |
+| POST   | `/api/v1/api-keys`            | Create an API key (one-time reveal)          |
+| DELETE | `/api/v1/api-keys/{id}`       | Revoke an API key                            |
+| GET    | `/api/v1/webhooks`            | List webhook subscriptions                   |
+| POST   | `/api/v1/webhooks`            | Register a webhook                           |
+| DELETE | `/api/v1/webhooks/{id}`       | Delete a webhook                             |
+| GET    | `/health`                     | Liveness check                               |
 
 ### GraphQL
 
-```
-POST /graphql
-GET  /graphql/playground
-```
+Endpoint: `POST /graphql`. Subscriptions: `WS /graphql/ws`. Playground: `GET /graphql/playground`.
 
-**Key queries**
+Key queries:
 
-```graphql
-query {
-  blockchainEvents(contractAddress: "0x...", eventName: "Transfer") {
-    id transactionHash blockNumber contentHash
-  }
-  myJobs { id status createdAt }
-  systemMetrics { totalJobs activeWorkers }   # admin only
-}
-```
+- `job(id)` — single job (scoped to caller)
+- `myJobs(limit)` — recent jobs for the caller
+- `blockchainEvents(contractAddress, limit)` — indexed events
+- `ipfsContent(cid)` — IPFS metadata for a CID
+- `creditBalance` — current INC credit balance
+- `walletInfo` — registered on-chain address + balance
+- `aiExtractions(eventId)` — AI-extracted structured data for an event (scoped to caller)
+- `marketplaceListings(activeOnly, limit)` — marketplace catalogue
+- `rateLimitStatus` — caller's rate-limit window state
 
-**Key mutations**
+Key mutations:
 
-```graphql
-mutation {
-  createBlockchainJob(contractAddress: "0x...", eventNames: ["Transfer"], chain: "ethereum") { id }
-  purchaseCredits(amount: 1000) { balance }
-  createMarketplaceListing(datasetName: "...", priceCredits: 500, ipfsCid: "Qm...") { id }
-  purchaseDataset(listingId: "...") { ipfsCid }
-}
-```
-
-**Subscriptions** — delivered via PostgreSQL `LISTEN/NOTIFY`:
-
-```graphql
-subscription {
-  blockchainEventStream(contractAddress: "0x...") {
-    eventName transactionHash blockNumber
-  }
-}
-```
+- `createBlockchainJob(contractAddress, chain, eventName, fromBlock)` — 50 credits, atomic balance check
+- `registerWallet(address)` — bind on-chain address to the account
+- `syncCreditBalance` — pull on-chain locked credits into the DB view
 
 ## Smart contracts
 
-Source in `contracts/`. Deployed with Foundry (`foundry.toml`).
+| Contract            | Purpose                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `CreditToken` (INC) | ERC-20, 1B fixed supply, burn-on-spend, deflationary. Non-upgradeable.        |
+| `DataMarketplace`   | UUPS-upgradeable marketplace with SafeERC20, nonReentrant, 5% platform fee.   |
+| `TimestampRegistry` | UUPS-upgradeable permissionless hash commitment for proof-of-existence.      |
 
-| Contract | Description |
-|---|---|
-| `CreditToken.sol` | ERC-20 `INC` token; `purchaseCredits` / `spendCredits` |
-| `TimestampRegistry.sol` | `commitHash` / `verifyHash` for on-chain existence proofs |
-| `DataMarketplace.sol` | Peer-to-peer dataset listings and purchases |
+Both upgradeable contracts use a `uint256[50] private __gap` storage gap. `_authorizeUpgrade` is `onlyOwner`. The deploy script transfers ownership of all three contracts to `MULTISIG_OWNER` inside the same broadcast as `initialize`.
+
+Contract tests live in `contracts/test/` and exercise happy paths, revert conditions, fee math, the `nonReentrant` guard (via a reentrant-token mock), UUPS upgrade authorization, and the `CreditToken` burn/balance invariant. Run with `forge test`.
 
 ## Security
 
-- JWT authentication with role-based access control (`user` / `admin`)
-- Per-IP rate limiting (10 req/s, burst 20) and per-user rate limiting on GraphQL (5 req/s)
-- Input validation and HTML sanitization on all user-supplied strings
-- Ethereum address and IPFS CID format validation
-- Private keys zeroed from memory after use (`zeroize`)
-- Audit log for all sensitive operations (login, job creation, purchases)
-- Docker containers run as non-root (`appuser`)
-- Security response headers (CSP, X-Frame-Options, Referrer-Policy)
+- **Auth.** JWT issued only as an HttpOnly cookie (`auth_token`); never returned in the response body. `auth_present=1` is a non-HttpOnly companion cookie used by JS for UI state. `validate_token` pins the JWT algorithm to HS256 (`Validation::new(Algorithm::HS256)`), so `alg=none` and asymmetric variants are rejected.
+- **CSRF.** `SameSite=Lax` on `auth_token` plus the `ALLOWED_ORIGIN` CORS allow-list. State-changing endpoints are POST/DELETE; Lax does not send the cookie on cross-site POST/DELETE.
+- **Secure cookie.** `COOKIE_SECURE=1` must be set in any non-localhost deployment.
+- **Rate limiting.** Two `tower_governor` layers — global IP-based (10 req/s, burst 20) applied to every route including `/graphql*`, and per-user (5 req/s, burst 20) applied to authenticated REST routes.
+- **SSRF.** Hostnames are resolved with `tokio::net::lookup_host` and IPv4/IPv6 private, loopback, link-local, broadcast, and unspecified ranges are rejected before any outbound HTTP request.
+- **Input validation.** Ethereum addresses, IPFS CIDs, URLs, and lengths are validated at every external boundary.
+- **DOM XSS.** All user data in the dashboard is written via `textContent` or `createElement`; `innerHTML` is not used with interpolated data.
+- **Audit log.** `db::audit_log` records register, login, login_failed, job creation, wallet registration, and credit-affecting actions.
+- **Secret handling.** `CREDIT_PRIVATE_KEY` is wrapped in `Zeroizing` so the heap memory is wiped after the contract clients are built.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

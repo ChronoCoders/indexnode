@@ -29,7 +29,6 @@ WORKDIR /app
 
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/
 COPY --from=builder /app/target/release/indexnode-api .
-COPY frontend ./frontend
 COPY migrations ./migrations
 
 RUN chown -R appuser:appuser /app

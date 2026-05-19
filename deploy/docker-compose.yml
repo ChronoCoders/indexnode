@@ -51,7 +51,6 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY}
       BASE_URL: ${BASE_URL:-https://indexnode.io}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-https://indexnode.io}
-      SERVE_FRONTEND: ${SERVE_FRONTEND:-true}
       RUST_LOG: info
     depends_on:
       postgres:
