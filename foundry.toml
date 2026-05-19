@@ -1,10 +1,12 @@
 [profile.default]
 src = 'contracts'
+test = 'contracts/test'
 out = 'out'
-libs = ["node_modules", "lib"]
+libs = ["lib"]
+solc_version = "0.8.20"
 remappings = [
   '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
-  '@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/',
+  '@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
 ]
 
 [rpc_endpoints]

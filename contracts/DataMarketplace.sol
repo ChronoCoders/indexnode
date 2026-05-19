@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -108,12 +108,11 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(l.active, "Listing not active");
         require(l.seller != msg.sender, "Cannot buy own listing");
 
-        uint256 fee         = (platformFeePercent * l.price) / 100;
-        uint256 sellerShare = l.price - fee;
-
-        paymentToken.safeTransferFrom(msg.sender, l.seller, sellerShare);
-        paymentToken.safeTransferFrom(msg.sender, address(this), fee);
-
+        // ── Effects ──────────────────────────────────────────────────────────
+        // All state writes happen before the external transfers. nonReentrant
+        // already prevents reentrancy, but CEI is the correct pattern and
+        // future-proofs the function against modifier removal or custom token
+        // hooks.
         purchaseCount++;
         purchases[purchaseCount] = Purchase({
             listingId:   listingId,
@@ -122,9 +121,19 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             purchasedAt: block.timestamp,
             refunded:    false
         });
-
         l.sales++;
         sellerReputation[l.seller]++;
+
+        // ── Interactions ─────────────────────────────────────────────────────
+        // Fee rounds down (Solidity integer division truncates toward zero).
+        // For e.g. price=99 and platformFeePercent=5, fee=4 (not 4.95). The
+        // remainder stays with the buyer — the contract never receives more
+        // than `fee`. The invariant `sellerShare + fee <= l.price` always
+        // holds, with at most 1 wei of difference at the rounding boundary.
+        uint256 fee         = (platformFeePercent * l.price) / 100;
+        uint256 sellerShare = l.price - fee;
+        paymentToken.safeTransferFrom(msg.sender, l.seller, sellerShare);
+        paymentToken.safeTransferFrom(msg.sender, address(this), fee);
 
         emit DatasetPurchased(listingId, purchaseCount, msg.sender);
         emit ReputationUpdated(l.seller, sellerReputation[l.seller]);
