@@ -78,7 +78,8 @@ fn reject_private_ipv4(addr: Ipv4Addr) -> Result<()> {
         || addr.is_private()    // 10/8, 172.16/12, 192.168/16
         || addr.is_link_local() // 169.254.0.0/16
         || addr.is_unspecified() // 0.0.0.0
-        || addr.is_broadcast()  // 255.255.255.255
+        || addr.is_broadcast()
+    // 255.255.255.255
     {
         anyhow::bail!("Private/reserved IP addresses not allowed");
     }
@@ -87,7 +88,8 @@ fn reject_private_ipv4(addr: Ipv4Addr) -> Result<()> {
 
 fn reject_private_ipv6(addr: Ipv6Addr) -> Result<()> {
     if addr.is_loopback()        // ::1
-        || addr.is_unspecified() // ::
+        || addr.is_unspecified()
+    // ::
     {
         anyhow::bail!("Private/reserved IP addresses not allowed");
     }

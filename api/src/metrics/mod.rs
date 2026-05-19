@@ -1,4 +1,4 @@
-use metrics::{counter, describe_counter, describe_gauge, describe_histogram, gauge, histogram};
+use metrics::{counter, describe_counter, describe_histogram, histogram};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
 use std::time::Instant;
 
@@ -22,8 +22,6 @@ pub fn init_metrics() -> anyhow::Result<PrometheusHandle> {
     describe_histogram!("job_processing_duration_seconds", "Job processing duration");
     describe_counter!("jobs_completed_total", "Total jobs completed successfully");
     describe_counter!("jobs_failed_total", "Total jobs that failed");
-    describe_gauge!("active_workers", "Number of active workers");
-    describe_gauge!("queue_depth", "Number of jobs in queue");
 
     Ok(handle)
 }
@@ -52,14 +50,6 @@ pub fn record_job_completed() {
 
 pub fn record_job_failed() {
     counter!("jobs_failed_total").increment(1);
-}
-
-pub fn update_active_workers(count: i64) {
-    gauge!("active_workers").set(count as f64);
-}
-
-pub fn update_queue_depth(depth: i64) {
-    gauge!("queue_depth").set(depth as f64);
 }
 
 pub struct TimedOperation {

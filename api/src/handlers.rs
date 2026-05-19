@@ -11,7 +11,7 @@ use axum::{
     Json,
 };
 use chrono::Utc;
-use indexnode_core::{HttpCrawlParams, Job, JobConfig, JobParams, JobQueue, JobStatus, JobType};
+use indexnode_core::{HttpCrawlParams, JobConfig, JobParams, JobType};
 use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -37,7 +37,6 @@ pub struct RegisterRequest {
 
 #[derive(Serialize)]
 pub struct AuthResponse {
-    token: String,
     user_id: String,
 }
 
@@ -126,10 +125,13 @@ pub async fn register(
     .await;
 
     let headers = auth_cookie_headers(&token, false);
-    Ok((headers, Json(AuthResponse {
-        token,
-        user_id: user_id.to_string(),
-    })).into_response())
+    Ok((
+        headers,
+        Json(AuthResponse {
+            user_id: user_id.to_string(),
+        }),
+    )
+        .into_response())
 }
 
 #[derive(Deserialize)]
@@ -190,10 +192,13 @@ pub async fn login(
     .await;
 
     let headers = auth_cookie_headers(&token, req.remember_me);
-    Ok((headers, Json(AuthResponse {
-        token,
-        user_id: user.id.to_string(),
-    })).into_response())
+    Ok((
+        headers,
+        Json(AuthResponse {
+            user_id: user.id.to_string(),
+        }),
+    )
+        .into_response())
 }
 
 /// Clears auth cookies for the current session.
@@ -206,7 +211,11 @@ pub async fn logout() -> impl IntoResponse {
 
 fn auth_cookie_headers(token: &str, remember_me: bool) -> HeaderMap {
     let mut headers = HeaderMap::new();
-    let max_age = if remember_me { 60 * 60 * 24 * 30 } else { 60 * 60 * 24 };
+    let max_age = if remember_me {
+        60 * 60 * 24 * 30
+    } else {
+        60 * 60 * 24
+    };
     headers.append(
         header::SET_COOKIE,
         build_cookie("auth_token", token, true, max_age),

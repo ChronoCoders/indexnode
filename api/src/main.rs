@@ -7,10 +7,9 @@ use axum::{serve, Router as AxumRouter};
 use chrono::Utc;
 use ethers::types::Address;
 use indexnode_core::{
-    compute_merkle_root, hash_content, AIExtractor, BlockchainClient, Coordinator, Crawler,
-    CreditManager, DistributedQueue, EventFilter, IpfsStorage, Job, JobConfig, JobParams, JobQueue,
-    JobStatus, MarketplaceClient, TimestampClient, Worker as DistributedWorker,
-    WorkerConfig as DistributedWorkerConfig,
+    compute_merkle_root, hash_content, AIExtractor, BlockchainClient, Crawler, CreditManager,
+    EventFilter, IpfsStorage, Job, JobConfig, JobParams, JobQueue, JobStatus, MarketplaceClient,
+    TimestampClient,
 };
 use sqlx::postgres::PgPoolOptions;
 use std::collections::HashMap;
@@ -18,7 +17,6 @@ use std::env;
 use std::net::SocketAddr;
 use std::time::Duration;
 use tower_http::cors::{AllowHeaders, AllowMethods, CorsLayer};
-use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;
@@ -180,7 +178,7 @@ async fn main() -> Result<()> {
 
     let per_user_limiter = middleware::create_per_user_rate_limiter()?;
 
-    let mut app = AxumRouter::new()
+    let app = AxumRouter::new()
         .merge(routes::create_routes(pool.clone()))
         .route("/metrics", axum::routing::get(metrics_handler))
         .route_layer(per_user_limiter)
@@ -206,29 +204,6 @@ async fn main() -> Result<()> {
         .layer(Extension(metrics_handle))
         .layer(TraceLayer::new_for_http());
 
-    // Optionally serve the frontend from the same process. In production,
-    // prefer serving static assets from a CDN or dedicated static file server.
-    if env::var("SERVE_FRONTEND").as_deref() == Ok("true") {
-        let serve_dir =
-            ServeDir::new("./frontend").not_found_service(ServeFile::new("./frontend/index.html"));
-        app = app.fallback_service(serve_dir);
-        tracing::info!("Serving frontend from ./frontend");
-    }
-
-    // Metrics update task
-    let metrics_pool = pool.clone();
-    tokio::spawn(async move {
-        loop {
-            if let Ok(active) = get_active_worker_count(&metrics_pool).await {
-                metrics::update_active_workers(active);
-            }
-            if let Ok(depth) = get_queue_depth(&metrics_pool).await {
-                metrics::update_queue_depth(depth);
-            }
-            tokio::time::sleep(Duration::from_secs(15)).await;
-        }
-    });
-
     let port = std::env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
         .parse::<u16>()
@@ -251,34 +226,6 @@ async fn main() -> Result<()> {
         let _ = shutdown_tx.send(true);
     })
     .await?;
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-async fn run_distributed_worker(redis_url: String, _pool: sqlx::PgPool) -> Result<()> {
-    let queue = DistributedQueue::new(&redis_url).await?;
-    let coordinator = Coordinator::new(&redis_url).await?;
-
-    let config = DistributedWorkerConfig {
-        worker_id: format!("indexnode-{}", uuid::Uuid::new_v4()),
-        ..Default::default()
-    };
-
-    let worker = DistributedWorker::new(queue, config.clone()).await?;
-
-    let coord_clone = coordinator.clone();
-    let worker_id_clone = config.worker_id.clone();
-    tokio::spawn(async move {
-        loop {
-            if let Err(e) = coord_clone.heartbeat(&worker_id_clone).await {
-                tracing::error!("Heartbeat failed: {}", e);
-            }
-            tokio::time::sleep(Duration::from_secs(30)).await;
-        }
-    });
-
-    worker.run(|_job| async move { Ok(()) }).await?;
 
     Ok(())
 }
@@ -313,24 +260,6 @@ async fn metrics_handler(
     Extension(handle): Extension<metrics_exporter_prometheus::PrometheusHandle>,
 ) -> String {
     handle.render()
-}
-
-async fn get_active_worker_count(pool: &sqlx::PgPool) -> Result<i64> {
-    let count = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM worker_nodes WHERE status = 'active' AND last_heartbeat > NOW() - INTERVAL '2 minutes'"
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(count)
-}
-
-async fn get_queue_depth(pool: &sqlx::PgPool) -> Result<i64> {
-    let count = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM distributed_jobs WHERE status = 'queued'",
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(count)
 }
 
 /// Stateful service handles passed into `process_blockchain_index`.
@@ -478,8 +407,12 @@ async fn run_worker(
                                                 );
                                             }
                                             Ok(_) => {
+                                                // credit_balance was already debited at submission
+                                                // time (handlers.rs / schema.rs). Only roll the
+                                                // total_spent counter forward here on confirmed
+                                                // on-chain spend.
                                                 if let Err(e) = sqlx::query(
-                                                    "UPDATE user_credits SET credit_balance = credit_balance - $1, total_spent = total_spent + $1 WHERE user_id = $2"
+                                                    "UPDATE user_credits SET total_spent = total_spent + $1 WHERE user_id = $2"
                                                 )
                                                 .bind(cost.as_u64() as i64)
                                                 .bind(job.user_id)
@@ -487,7 +420,7 @@ async fn run_worker(
                                                 .await
                                                 {
                                                     tracing::error!(
-                                                        "Failed to update credit balance for job {}: {:?}",
+                                                        "Failed to update total_spent for job {}: {:?}",
                                                         job.id, e
                                                     );
                                                 }
@@ -833,18 +766,18 @@ async fn process_blockchain_index(
                     );
                 }
                 Ok(_) => {
+                    // credit_balance was already debited at submission time
+                    // (schema.rs::create_blockchain_job). Only roll the
+                    // total_spent counter forward here on confirmed on-chain spend.
                     if let Err(e) = sqlx::query(
-                        "UPDATE user_credits SET credit_balance = credit_balance - $1, total_spent = total_spent + $1 WHERE user_id = $2"
+                        "UPDATE user_credits SET total_spent = total_spent + $1 WHERE user_id = $2",
                     )
                     .bind(cost.as_u64() as i64)
                     .bind(job.user_id)
                     .execute(pool)
                     .await
                     {
-                        tracing::error!(
-                            "Failed to update credit balance for job {}: {:?}",
-                            job.id, e
-                        );
+                        tracing::error!("Failed to update total_spent for job {}: {:?}", job.id, e);
                     }
                 }
             }

@@ -6,7 +6,7 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "multipart"] }
 scraper = "0.20"
 url = "2.5"
 anyhow.workspace = true
@@ -23,8 +23,4 @@ tokio-stream.workspace = true
 tracing.workspace = true
 futures.workspace = true
 ipfs-api-backend-hyper.workspace = true
-redis.workspace = true 
-deadpool-redis.workspace = true 
-chromiumoxide.workspace = true 
-tokio-tungstenite.workspace = true 
-fastrand.workspace = true 
+fastrand.workspace = true

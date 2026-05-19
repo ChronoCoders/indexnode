@@ -1,5 +1,4 @@
 use super::types::*;
-use crate::auth::UserRole;
 use crate::db;
 use crate::security::{InputValidator, Sanitizer};
 use anyhow::Context as AnyhowContext;
@@ -28,15 +27,14 @@ impl Query {
         let job_id = Uuid::parse_str(&id)
             .map_err(|e| Error::new(format!("Invalid job ID format: {}", e)))?;
 
-        let row = sqlx::query(
-            "SELECT id, status, created_at FROM jobs WHERE id = $1 AND user_id = $2",
-        )
-        .bind(job_id)
-        .bind(user_id)
-        .fetch_optional(pool)
-        .await
-        .context("Job not found")?
-        .ok_or_else(|| Error::new("Job not found"))?;
+        let row =
+            sqlx::query("SELECT id, status, created_at FROM jobs WHERE id = $1 AND user_id = $2")
+                .bind(job_id)
+                .bind(user_id)
+                .fetch_optional(pool)
+                .await
+                .context("Job not found")?
+                .ok_or_else(|| Error::new("Job not found"))?;
 
         use sqlx::Row;
         Ok(Job {
@@ -159,10 +157,7 @@ impl Query {
             .into_iter()
             .map(|r| {
                 let config: serde_json::Value = r.get("config");
-                let job_type = config["job_type"]
-                    .as_str()
-                    .unwrap_or("unknown")
-                    .to_string();
+                let job_type = config["job_type"].as_str().unwrap_or("unknown").to_string();
                 let target = if job_type == "blockchain_index" {
                     config["params"]["contract_address"]
                         .as_str()
@@ -235,11 +230,16 @@ impl Query {
     }
 
     /// Fetches AI-powered extractions for a specific blockchain event.
+    /// Scoped to the authenticated user — only events from jobs owned by the
+    /// caller are returned.
     async fn ai_extractions(
         &self,
         ctx: &Context<'_>,
         event_id: String,
     ) -> async_graphql::Result<Vec<AIExtraction>> {
+        let user_id = ctx
+            .data_opt::<Uuid>()
+            .ok_or_else(|| Error::new("Authentication required"))?;
         let pool = ctx
             .data::<PgPool>()
             .map_err(|_| Error::new("Failed to get database pool"))?;
@@ -247,10 +247,14 @@ impl Query {
             .map_err(|e| Error::new(format!("Invalid event ID format: {}", e)))?;
 
         let records = sqlx::query(
-            "SELECT id, extraction_type, extracted_data, confidence_score, created_at
-             FROM ai_extractions WHERE blockchain_event_id = $1",
+            "SELECT ae.id, ae.extraction_type, ae.extracted_data, ae.confidence_score, ae.created_at
+             FROM ai_extractions ae
+             JOIN blockchain_events be ON ae.blockchain_event_id = be.id
+             JOIN jobs j ON be.job_id = j.id
+             WHERE ae.blockchain_event_id = $1 AND j.user_id = $2",
         )
         .bind(event_uuid)
+        .bind(user_id)
         .fetch_all(pool)
         .await
         .context("Failed to fetch AI extractions")?;
@@ -297,41 +301,6 @@ impl Query {
             quota,
             used,
             remaining: quota - used,
-        })
-    }
-
-    /// Fetches global system health and queue metrics. Requires admin role.
-    async fn system_metrics(&self, ctx: &Context<'_>) -> async_graphql::Result<SystemMetrics> {
-        // Admin-only endpoint.
-        let role = ctx
-            .data_opt::<UserRole>()
-            .cloned()
-            .ok_or_else(|| Error::new("Unauthorized"))?;
-        if role != UserRole::Admin {
-            return Err(Error::new("Forbidden: admin access required"));
-        }
-
-        let pool = ctx
-            .data::<PgPool>()
-            .map_err(|_| Error::new("Failed to get database pool"))?;
-
-        use sqlx::Row;
-        let active_workers = sqlx::query(
-            "SELECT COUNT(*) as count FROM worker_nodes WHERE status = 'active' AND last_heartbeat > NOW() - INTERVAL '2 minutes'"
-        )
-        .fetch_one(pool)
-        .await?
-        .get::<i64, _>("count");
-
-        let queue_depth =
-            sqlx::query("SELECT COUNT(*) as count FROM distributed_jobs WHERE status = 'queued'")
-                .fetch_one(pool)
-                .await?
-                .get::<i64, _>("count");
-
-        Ok(SystemMetrics {
-            active_workers,
-            queue_depth,
         })
     }
 

@@ -99,15 +99,6 @@ pub struct RateLimitStatus {
     pub remaining: i32,
 }
 
-/// Global system health and queue metrics.
-#[derive(SimpleObject)]
-pub struct SystemMetrics {
-    /// Number of currently active worker nodes.
-    pub active_workers: i64,
-    /// Number of jobs waiting in the distributed queue.
-    pub queue_depth: i64,
-}
-
 /// A listing in the data marketplace.
 #[derive(SimpleObject)]
 pub struct MarketplaceListing {
