@@ -155,4 +155,4 @@ Contract tests live in `contracts/test/` and exercise happy paths, revert condit
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Proprietary — All Rights Reserved. See [LICENSE](LICENSE).

@@ -88,12 +88,14 @@ export default function TermsPage() {
 
       <h2>5. Intellectual property and licensing</h2>
       <p>
-        The IndexNode platform, including its source code, is licensed under
-        the <strong>Business Source License 1.1</strong>. This means the source
-        is publicly readable and modifiable for non-production use, but
-        deploying it as a competing hosted service is not permitted until the
-        change date stated in the license. The BSL automatically converts to
-        an Apache 2.0 license on that date.
+        The IndexNode platform, including its source code, documentation, and
+        assets, is the proprietary property of Distributed Systems Labs, LLC
+        and is distributed under an <strong>All Rights Reserved</strong>
+        license. No license, express or implied, is granted to copy, modify,
+        redistribute, sublicense, host, or create derivative works from any
+        part of the software except as expressly permitted in writing by the
+        copyright holder. Source visibility for evaluation does not constitute
+        a grant of any other right.
       </p>
       <p>
         You retain ownership of the inputs you submit (job configurations,
