@@ -3,7 +3,7 @@ name = "indexnode-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
-license.workspace = true
+license-file.workspace = true
 
 [dependencies]
 reqwest = { version = "0.12", features = ["json", "multipart"] }

@@ -6,7 +6,7 @@ members = ["api", "core"]
 version = "0.1.0"
 edition = "2021"
 authors = ["Distributed Systems Labs"]
-license = "MIT"
+license-file = "LICENSE"
 description = "Trustless Blockchain Intelligence - Blockchain event indexing with cryptographic verification"
 
 [workspace.dependencies]
