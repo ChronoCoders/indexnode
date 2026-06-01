@@ -15,7 +15,6 @@ pub struct Query;
 
 #[Object]
 impl Query {
-    /// Fetches a single job by its ID. Only the owning user may access it.
     async fn job(&self, ctx: &Context<'_>, id: String) -> async_graphql::Result<Job> {
         let pool = ctx
             .data::<PgPool>()
@@ -46,7 +45,6 @@ impl Query {
         })
     }
 
-    /// Fetches blockchain events for a specific contract with an optional limit.
     async fn blockchain_events(
         &self,
         ctx: &Context<'_>,
@@ -58,7 +56,6 @@ impl Query {
             .map_err(|_| Error::new("Failed to get database pool"))?;
         let limit = limit.unwrap_or(10).min(100);
 
-        // Validate the address before using it in a query.
         InputValidator::validate_ethereum_address(&contract_address)
             .map_err(|e| Error::new(format!("Invalid contract address: {}", e)))?;
 
@@ -91,7 +88,6 @@ impl Query {
             .collect())
     }
 
-    /// Fetches IPFS content metadata by CID.
     async fn ipfs_content(
         &self,
         ctx: &Context<'_>,
@@ -124,7 +120,6 @@ impl Query {
         })
     }
 
-    /// Fetches the authenticated user's recent jobs.
     async fn my_jobs(
         &self,
         ctx: &Context<'_>,
@@ -182,7 +177,6 @@ impl Query {
             .collect())
     }
 
-    /// Fetches the credit balance for the authenticated user.
     async fn credit_balance(&self, ctx: &Context<'_>) -> async_graphql::Result<i64> {
         let pool = ctx
             .data::<PgPool>()
@@ -204,7 +198,6 @@ impl Query {
         Ok(balance)
     }
 
-    /// Returns the registered wallet address and credit balance for the authenticated user.
     async fn wallet_info(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<WalletInfo>> {
         let pool = ctx
             .data::<PgPool>()
@@ -229,9 +222,6 @@ impl Query {
         }))
     }
 
-    /// Fetches AI-powered extractions for a specific blockchain event.
-    /// Scoped to the authenticated user — only events from jobs owned by the
-    /// caller are returned.
     async fn ai_extractions(
         &self,
         ctx: &Context<'_>,
@@ -274,7 +264,6 @@ impl Query {
             .collect())
     }
 
-    /// Fetches the rate limit status for the authenticated user.
     async fn rate_limit_status(&self, ctx: &Context<'_>) -> async_graphql::Result<RateLimitStatus> {
         let pool = ctx
             .data::<PgPool>()
@@ -304,7 +293,6 @@ impl Query {
         })
     }
 
-    /// Fetches listings from the data marketplace.
     async fn marketplace_listings(
         &self,
         ctx: &Context<'_>,
@@ -369,7 +357,6 @@ impl Query {
             .collect())
     }
 
-    /// Fetches purchases for the authenticated user.
     async fn marketplace_purchases(
         &self,
         ctx: &Context<'_>,
@@ -416,7 +403,6 @@ pub struct Mutation;
 
 #[Object]
 impl Mutation {
-    /// Creates a new blockchain indexing job.
     async fn create_blockchain_job(
         &self,
         ctx: &Context<'_>,
@@ -430,7 +416,6 @@ impl Mutation {
             .cloned()
             .ok_or_else(|| Error::new("Unauthorized"))?;
 
-        // Input validation — done before opening the transaction.
         InputValidator::validate_ethereum_address(&input.contract_address)
             .map_err(|e| Error::new(format!("Security validation failed: {}", e)))?;
         InputValidator::validate_string_length(&input.chain, 1, 64, "chain")
@@ -461,7 +446,6 @@ impl Mutation {
                 "extraction_schema is required when enable_ai_extraction is true",
             ));
         }
-        // Cap the token budget to prevent unbounded cost.
         let ai_token_budget = input
             .ai_token_budget
             .map(|b| (b.max(1) as u32).min(1_000_000));
@@ -484,9 +468,6 @@ impl Mutation {
 
         let job_id = Uuid::new_v4();
 
-        // Atomically decrement credits and insert the job in one transaction.
-        // The UPDATE only succeeds if the balance is sufficient, preventing
-        // concurrent requests from double-spending credits.
         let mut tx = pool.begin().await.context("Failed to begin transaction")?;
 
         let rows_affected = sqlx::query(
@@ -533,8 +514,6 @@ impl Mutation {
         })
     }
 
-    /// Registers or updates the Ethereum wallet address for the authenticated user.
-    /// This address is used for on-chain credit spending when indexing jobs run.
     async fn register_wallet(
         &self,
         ctx: &Context<'_>,
@@ -586,7 +565,6 @@ impl Mutation {
         })
     }
 
-    /// Purchases credits using ERC-20 tokens.
     async fn purchase_credits(
         &self,
         ctx: &Context<'_>,
@@ -629,7 +607,6 @@ impl Mutation {
         Ok(format!("{:?}", tx_hash))
     }
 
-    /// Creates a new marketplace listing.
     async fn create_marketplace_listing(
         &self,
         ctx: &Context<'_>,
@@ -646,7 +623,6 @@ impl Mutation {
             .data::<MarketplaceClient>()
             .map_err(|_| Error::new("Marketplace client not available"))?;
 
-        // Validate inputs
         InputValidator::validate_ipfs_cid(&input.ipfs_cid)
             .map_err(|e| Error::new(format!("Invalid IPFS CID: {}", e)))?;
         InputValidator::validate_string_length(&input.dataset_name, 1, 256, "dataset_name")
@@ -699,7 +675,6 @@ impl Mutation {
         Ok(listing_id.to_string())
     }
 
-    /// Purchases a dataset from the marketplace.
     async fn purchase_dataset(
         &self,
         ctx: &Context<'_>,
@@ -767,9 +742,6 @@ impl Mutation {
         Ok(purchase_id.to_string())
     }
 
-    /// Reads the caller's credit balance directly from the smart contract and
-    /// writes it back to the database. Call this after a deposit or withdrawal
-    /// transaction has been confirmed on-chain to keep the platform balance in sync.
     async fn sync_credit_balance(&self, ctx: &Context<'_>) -> async_graphql::Result<i64> {
         let pool = ctx
             .data::<PgPool>()
@@ -800,7 +772,6 @@ impl Mutation {
             .await
             .map_err(|e| Error::new(format!("Failed to read on-chain balance: {}", e)))?;
 
-        // Contract balances are in wei (18 decimals); store whole INC units in the DB.
         let balance_inc = (balance_wei / U256::exp10(18)).as_u64() as i64;
 
         sqlx::query("UPDATE user_credits SET credit_balance = $1 WHERE user_id = $2")
@@ -818,7 +789,6 @@ pub struct Subscription;
 
 #[Subscription]
 impl Subscription {
-    /// Streams real-time blockchain events for a specific contract using PostgreSQL LISTEN/NOTIFY.
     async fn blockchain_events<'a>(
         &self,
         ctx: &'a Context<'_>,
@@ -844,7 +814,6 @@ impl Subscription {
         Ok(listener.into_stream().filter_map(move |notification| {
             let n = notification.ok()?;
             let v: serde_json::Value = serde_json::from_str(n.payload()).ok()?;
-            // Filter server-side to only emit events for the requested contract.
             if v["contract_address"].as_str()? != contract_address.as_str() {
                 return None;
             }
@@ -866,7 +835,6 @@ impl Subscription {
 
 pub type AppSchema = Schema<Query, Mutation, Subscription>;
 
-/// Builds the GraphQL schema with the provided database pool and credit manager.
 pub fn build_schema(
     pool: PgPool,
     credit_manager: CreditManager,

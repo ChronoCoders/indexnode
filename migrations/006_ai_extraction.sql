@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS ai_extractions (
 CREATE INDEX IF NOT EXISTS idx_ai_extractions_event ON ai_extractions(blockchain_event_id); 
 CREATE INDEX IF NOT EXISTS idx_ai_extractions_type ON ai_extractions(extraction_type); 
  
--- Add enable_ai_extraction and extraction_schema to jobs if they don't exist
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='jobs' AND column_name='enable_ai_extraction') THEN 

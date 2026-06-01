@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS user_credits ( 
-    user_id UUID PRIMARY KEY, -- REFERENCES users(id) commented out until users table exists
+    user_id UUID PRIMARY KEY,
     on_chain_address TEXT NOT NULL, 
     credit_balance BIGINT NOT NULL DEFAULT 0, 
     total_purchased BIGINT NOT NULL DEFAULT 0, 
@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
 CREATE INDEX IF NOT EXISTS idx_credit_tx_user ON credit_transactions(user_id, created_at DESC); 
 CREATE INDEX IF NOT EXISTS idx_credit_tx_hash ON credit_transactions(tx_hash); 
  
--- Add credit_cost to jobs if it doesn't exist
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='jobs' AND column_name='credit_cost') THEN 

@@ -1,8 +1,6 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-/// Writes a structured entry to the `audit_log` table.
-///
 /// This is a best-effort call: failures are logged but never propagate to the
 /// caller so that an audit-log write failure never breaks a user operation.
 pub async fn audit_log(

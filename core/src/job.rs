@@ -26,8 +26,6 @@ pub enum JobStatus {
     Processing,
     Completed,
     Failed,
-    /// Events indexed successfully but the on-chain Merkle commitment is pending
-    /// retry. Job will transition to Completed or Failed by the retry worker.
     PendingCommit,
 }
 
@@ -60,16 +58,12 @@ impl std::fmt::Display for JobStatus {
     }
 }
 
-/// Typed job configuration stored in the database as JSON.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JobConfig {
     pub job_type: JobType,
     pub params: JobParams,
 }
 
-/// Typed union of all supported job parameter shapes.
-/// Uses untagged serde so the existing JSON stored in the database is compatible:
-/// HttpCrawl params contain `url`, BlockchainIndex params contain `contract_address`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum JobParams {
@@ -100,12 +94,9 @@ pub enum JobType {
     BlockchainIndex,
 }
 
-/// Parameters for an HTTP crawl job.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HttpCrawlParams {
-    /// The seed URL to start crawling from.
     pub url: String,
-    /// Maximum number of pages to crawl. Defaults to 100.
     #[serde(default = "default_max_pages")]
     pub max_pages: usize,
 }
@@ -114,7 +105,6 @@ fn default_max_pages() -> usize {
     100
 }
 
-/// Parameters for a blockchain event indexing job.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockchainIndexParams {
     pub chain: String,
@@ -122,15 +112,10 @@ pub struct BlockchainIndexParams {
     pub events: Vec<String>,
     pub from_block: u64,
     pub to_block: Option<u64>,
-    /// Whether to run AI extraction on each indexed event.
     #[serde(default)]
     pub enable_ai: bool,
-    /// JSON schema passed to the AI extractor. Required when enable_ai is true.
     #[serde(default)]
     pub extraction_schema: Option<serde_json::Value>,
-    /// Maximum total tokens (input + output) the AI extractor may consume
-    /// across all events in this job. Extraction stops when budget is exhausted.
-    /// Defaults to 100,000 when enable_ai is true and no budget is specified.
     #[serde(default)]
     pub ai_token_budget: Option<u32>,
 }

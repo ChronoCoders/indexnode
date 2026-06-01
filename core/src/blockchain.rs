@@ -5,47 +5,31 @@ use std::sync::Arc;
 
 use crate::merkle::hash_content;
 
-/// Client for interacting with blockchain RPC nodes.
 pub struct BlockchainClient {
     provider: Arc<Provider<Ws>>,
 }
 
-/// Filter parameters for blockchain event indexing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventFilter {
-    /// The chain name (e.g., "ethereum", "polygon").
     pub chain: String,
-    /// The smart contract address to monitor.
     pub contract_address: Address,
-    /// The signature of the event to filter (e.g., "Transfer(address,address,uint256)").
     pub event_signature: String,
-    /// The starting block number for the filter.
     pub from_block: u64,
-    /// The ending block number for the filter.
     pub to_block: u64,
 }
 
-/// Represents an indexed blockchain event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockchainEvent {
-    /// The name of the blockchain (e.g., "ethereum").
     pub chain: String,
-    /// The address of the contract that emitted the event.
     pub contract_address: String,
-    /// The name/signature of the event.
     pub event_name: String,
-    /// The block number where the event was emitted.
     pub block_number: u64,
-    /// The hash of the transaction that emitted the event.
     pub transaction_hash: String,
-    /// The raw data of the event as a JSON value.
     pub event_data: serde_json::Value,
-    /// A cryptographic hash of the event content for integrity verification.
     pub content_hash: String,
 }
 
 impl BlockchainClient {
-    /// Creates a new `BlockchainClient` connected to the specified RPC URL.
     pub async fn new(rpc_url: &str) -> Result<Self> {
         let provider = Provider::<Ws>::connect(rpc_url)
             .await
@@ -55,7 +39,6 @@ impl BlockchainClient {
         })
     }
 
-    /// Fetches events from the blockchain based on the provided filter.
     pub async fn get_events(&self, filter: EventFilter) -> Result<Vec<BlockchainEvent>> {
         let ethers_filter = ethers::types::Filter::new()
             .address(filter.contract_address)
@@ -86,7 +69,6 @@ impl BlockchainClient {
         Ok(events)
     }
 
-    /// Returns the latest block number from the connected blockchain.
     pub async fn get_latest_block(&self) -> Result<u64> {
         let block_number = self
             .provider
@@ -103,7 +85,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_rpc_connection() {
-        // Use a public Sepolia RPC for testing if available, or skip if not in CI
         let rpc_url = "wss://ethereum-sepolia-rpc.publicnode.com";
         let client = BlockchainClient::new(rpc_url).await;
         if let Ok(client) = client {
@@ -114,8 +95,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_filtering() {
-        // USDC on Sepolia: 0x1c7D4B196Cb023240166624b9c5291532634a66a
-        // Transfer(address,address,uint256)
         let rpc_url = "wss://ethereum-sepolia-rpc.publicnode.com";
         let client = BlockchainClient::new(rpc_url).await;
         if let Ok(client) = client {

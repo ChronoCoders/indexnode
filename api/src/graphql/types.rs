@@ -1,105 +1,63 @@
 use async_graphql::*;
 use serde::{Deserialize, Serialize};
 
-/// Represents a background job in the system.
 #[derive(SimpleObject, Serialize, Deserialize)]
 pub struct Job {
-    /// Unique identifier for the job.
     pub id: String,
-    /// Current status of the job (e.g., "pending", "completed").
     pub status: String,
-    /// RFC3339 formatted timestamp of when the job was created.
     pub created_at: String,
 }
 
-/// Represents an event indexed from a blockchain smart contract.
 #[derive(SimpleObject, Serialize, Deserialize)]
 pub struct BlockchainEvent {
-    /// Unique identifier for the event record.
     pub id: String,
-    /// The smart contract address that emitted the event.
     pub contract_address: String,
-    /// The signature or name of the event.
     pub event_name: String,
-    /// The block number where the event was emitted.
     pub block_number: i64,
-    /// The hash of the transaction that emitted the event.
     pub transaction_hash: String,
-    /// JSON data containing event parameters.
     pub event_data: serde_json::Value,
-    /// A cryptographic hash of the event content for integrity verification.
     pub content_hash: String,
-    /// The IPFS Content Identifier (CID) where the event data is stored.
     pub ipfs_cid: Option<String>,
 }
 
-/// Metadata for content stored on IPFS.
 #[derive(SimpleObject)]
 pub struct IpfsContentMetadata {
-    /// The Content Identifier (CID) of the data.
     pub cid: String,
-    /// A cryptographic hash of the content.
     pub content_hash: String,
-    /// The size of the content in bytes.
     pub size_bytes: i64,
-    /// Whether the content is pinned on the IPFS node.
     pub pinned: bool,
-    /// RFC3339 formatted timestamp of when the metadata was recorded.
     pub created_at: String,
 }
 
-/// Input for creating a new blockchain indexing job.
 #[derive(InputObject)]
 pub struct CreateBlockchainJobInput {
-    /// The blockchain network (e.g., "ethereum").
     pub chain: String,
-    /// The address of the smart contract to index.
     pub contract_address: String,
-    /// List of event signatures to monitor.
     pub events: Vec<String>,
-    /// The starting block number for indexing.
     pub from_block: i64,
-    /// Optional ending block number for indexing.
     pub to_block: Option<i64>,
-    /// Enable AI extraction on each indexed event. Requires extraction_schema.
     pub enable_ai_extraction: Option<bool>,
-    /// JSON schema (as a string) describing the structure to extract from event data.
-    /// Required when enable_ai_extraction is true.
     pub extraction_schema: Option<String>,
-    /// Maximum total tokens (input + output) the AI extractor may use across
-    /// all events in this job. Defaults to 100,000. Capped at 1,000,000.
     pub ai_token_budget: Option<i32>,
 }
 
-/// Represents an AI-powered extraction from a blockchain event.
 #[derive(SimpleObject)]
 pub struct AIExtraction {
-    /// Unique identifier for the extraction.
     pub id: String,
-    /// The type of extraction (e.g., "structured", "summary", "classification").
     pub extraction_type: String,
-    /// The extracted data in JSON format.
     pub extracted_data: serde_json::Value,
-    /// Optional confidence score from the AI model.
     pub confidence_score: Option<f64>,
-    /// RFC3339 formatted timestamp of when the extraction was performed.
     pub created_at: String,
 }
 
-/// Current rate limit status for a user.
 #[derive(SimpleObject)]
 pub struct RateLimitStatus {
-    /// The user's current rate limit tier (e.g., "free", "premium").
     pub tier: String,
-    /// Total request quota for the current period.
     pub quota: i32,
-    /// Number of requests used in the current period.
     pub used: i32,
-    /// Number of requests remaining in the current period.
     pub remaining: i32,
 }
 
-/// A listing in the data marketplace.
 #[derive(SimpleObject)]
 pub struct MarketplaceListing {
     pub id: String,
@@ -113,7 +71,6 @@ pub struct MarketplaceListing {
     pub seller_rating: Option<f64>,
 }
 
-/// A purchase record in the data marketplace.
 #[derive(SimpleObject)]
 pub struct MarketplacePurchase {
     pub id: String,
@@ -124,32 +81,24 @@ pub struct MarketplacePurchase {
     pub purchased_at: String,
 }
 
-/// A job belonging to the authenticated user.
 #[derive(SimpleObject)]
 pub struct UserJob {
     pub id: String,
-    /// "blockchain_index" or "http_crawl"
     pub job_type: String,
     pub status: String,
-    /// Contract address for blockchain jobs, URL for crawl jobs.
     pub target: Option<String>,
-    /// Chain name for blockchain jobs (e.g. "ethereum").
     pub chain: Option<String>,
     pub created_at: String,
     pub completed_at: Option<String>,
     pub error: Option<String>,
 }
 
-/// Wallet registration info for the authenticated user.
 #[derive(SimpleObject)]
 pub struct WalletInfo {
-    /// The registered Ethereum wallet address, if one has been linked.
     pub wallet_address: Option<String>,
-    /// Current credit balance on the platform.
     pub credit_balance: i64,
 }
 
-/// Input for creating a new marketplace listing.
 #[derive(InputObject)]
 pub struct CreateListingInput {
     pub dataset_name: String,

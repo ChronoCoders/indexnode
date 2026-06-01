@@ -24,8 +24,6 @@ pub fn create_global_rate_limiter() -> anyhow::Result<
     Ok(GovernorLayer::new(Arc::new(config)))
 }
 
-/// Key extractor that uses the authenticated user ID for per-user rate limiting.
-/// Requires `require_auth` to have already inserted a `Uuid` into request extensions.
 #[derive(Clone)]
 pub struct UserIdKeyExtractor;
 

@@ -44,7 +44,6 @@ pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    // Validate password strength before hashing.
     SecurityConfig::default()
         .validate_password(&req.password)
         .map_err(|e| {
@@ -201,7 +200,6 @@ pub async fn login(
         .into_response())
 }
 
-/// Clears auth cookies for the current session.
 pub async fn logout() -> impl IntoResponse {
     let mut headers = HeaderMap::new();
     headers.append(header::SET_COOKIE, clear_cookie("auth_token"));
@@ -252,7 +250,6 @@ fn clear_cookie(name: &str) -> header::HeaderValue {
 #[derive(Deserialize)]
 pub struct CreateJobRequest {
     pub job_type: JobType,
-    /// Raw JSON params; validated and converted to typed JobParams during handler.
     pub params: serde_json::Value,
 }
 
@@ -267,7 +264,6 @@ pub async fn create_job(
     Extension(user_id): Extension<Uuid>,
     Json(req): Json<CreateJobRequest>,
 ) -> Result<Json<JobResponse>, StatusCode> {
-    // Validate params before opening a transaction.
     let typed_params: JobParams = match req.job_type {
         JobType::HttpCrawl => {
             let p: HttpCrawlParams = serde_json::from_value(req.params).map_err(|e| {
@@ -282,7 +278,6 @@ pub async fn create_job(
         }
         JobType::BlockchainIndex => {
             // Blockchain index jobs must be created through the GraphQL mutation
-            // which performs address and event validation.
             return Err(StatusCode::BAD_REQUEST);
         }
     };
@@ -295,9 +290,6 @@ pub async fn create_job(
 
     let job_id = Uuid::new_v4();
 
-    // Atomically decrement credits and insert the job in one transaction.
-    // The UPDATE only succeeds if the balance is sufficient, preventing
-    // concurrent requests from double-spending credits.
     let mut tx = state.pool.begin().await.map_err(|e| {
         tracing::error!("Failed to begin transaction: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
@@ -380,13 +372,11 @@ pub async fn get_job(
     }))
 }
 
-/// Request to verify a content hash on the blockchain.
 #[derive(Deserialize)]
 pub struct VerifyHashRequest {
     pub content_hash: String,
 }
 
-/// Response for content hash verification.
 #[derive(Serialize)]
 pub struct VerifyHashResponse {
     pub verified: bool,
@@ -394,8 +384,6 @@ pub struct VerifyHashResponse {
     pub transaction_hash: Option<String>,
     pub committed_at: Option<String>,
 }
-
-// ── Me ────────────────────────────────────────────────────────────────────────
 
 #[derive(Serialize)]
 pub struct MeResponse {
@@ -405,7 +393,6 @@ pub struct MeResponse {
     pub created_at: String,
 }
 
-/// Returns the authenticated user's own profile.
 pub async fn me(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -430,19 +417,12 @@ pub async fn me(
     }))
 }
 
-/// Verifies a content hash against on-chain Merkle commitments.
-///
-/// Two-pass lookup:
-///   1. Direct match — the hash is itself a committed Merkle root.
-///   2. Indirect match — the hash belongs to an event whose batch Merkle root
-///      was committed; returns the commitment for that root.
 pub async fn verify_hash(
     State(state): State<AppState>,
     Json(req): Json<VerifyHashRequest>,
 ) -> Result<Json<VerifyHashResponse>, StatusCode> {
     use sqlx::Row;
 
-    // Pass 1: direct match against committed Merkle roots.
     let direct = sqlx::query(
         "SELECT transaction_hash, block_number, committed_at
          FROM timestamp_commits
@@ -467,7 +447,6 @@ pub async fn verify_hash(
         }));
     }
 
-    // Pass 2: resolve via event → batch Merkle root → timestamp_commit.
     let via_event = sqlx::query(
         "SELECT tc.transaction_hash, tc.block_number, tc.committed_at
          FROM blockchain_events be
@@ -502,8 +481,6 @@ pub async fn verify_hash(
     }
 }
 
-// ── API Keys ──────────────────────────────────────────────────────────────────
-
 #[derive(Deserialize)]
 pub struct CreateApiKeyRequest {
     pub name: String,
@@ -514,7 +491,6 @@ pub struct CreateApiKeyRequest {
 #[derive(Serialize)]
 pub struct CreateApiKeyResponse {
     pub id: String,
-    /// Full raw key — shown **once**. Store it securely; it cannot be recovered.
     pub key: String,
     pub name: String,
     pub key_prefix: String,
@@ -532,8 +508,6 @@ pub struct ApiKeyItem {
     pub expires_at: Option<String>,
 }
 
-/// Creates a new API key for the authenticated user.
-/// The full raw key is returned once in the response — it is not stored.
 pub async fn create_api_key(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -542,11 +516,10 @@ pub async fn create_api_key(
     use rand_core::{OsRng, RngCore};
     use sha2::{Digest, Sha256};
 
-    // Generate 32 cryptographically random bytes → hex → prepend "ink_".
     let mut raw_bytes = [0u8; 32];
     OsRng.fill_bytes(&mut raw_bytes);
     let raw_key = format!("ink_{}", hex::encode(raw_bytes));
-    let key_prefix = raw_key[..12].to_string(); // "ink_" + 8 hex chars
+    let key_prefix = raw_key[..12].to_string();
 
     let key_hash = hex::encode(Sha256::digest(raw_key.as_bytes()));
 
@@ -581,7 +554,6 @@ pub async fn create_api_key(
     }))
 }
 
-/// Lists all API keys belonging to the authenticated user (without raw key values).
 pub async fn list_api_keys(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -623,7 +595,6 @@ pub async fn list_api_keys(
     Ok(Json(keys))
 }
 
-/// Deletes an API key. Only the owning user may delete their own keys.
 pub async fn delete_api_key(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -644,12 +615,9 @@ pub async fn delete_api_key(
     }
 }
 
-// ── Webhooks ──────────────────────────────────────────────────────────────────
-
 #[derive(Deserialize)]
 pub struct CreateWebhookRequest {
     pub url: String,
-    /// Event types to subscribe to. Defaults to ["job.completed", "job.failed"].
     pub events: Option<Vec<String>>,
 }
 
@@ -657,7 +625,6 @@ pub struct CreateWebhookRequest {
 pub struct CreateWebhookResponse {
     pub id: String,
     pub url: String,
-    /// HMAC-SHA256 signing secret — shown **once**.
     pub secret: String,
     pub events: Vec<String>,
     pub created_at: String,
@@ -674,9 +641,6 @@ pub struct WebhookItem {
 
 const ALLOWED_WEBHOOK_EVENTS: &[&str] = &["job.completed", "job.failed"];
 
-/// Registers a webhook endpoint for the authenticated user.
-/// The HMAC signing secret is returned once and not stored hashed —
-/// rotate it by deleting and recreating the subscription.
 pub async fn create_webhook(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -684,7 +648,6 @@ pub async fn create_webhook(
 ) -> Result<Json<CreateWebhookResponse>, StatusCode> {
     use rand_core::{OsRng, RngCore};
 
-    // Validate URL.
     InputValidator::validate_url(&req.url).await.map_err(|e| {
         tracing::warn!("Invalid webhook URL: {}", e);
         StatusCode::UNPROCESSABLE_ENTITY
@@ -694,7 +657,6 @@ pub async fn create_webhook(
         .events
         .unwrap_or_else(|| vec!["job.completed".into(), "job.failed".into()]);
 
-    // Validate event names.
     for event in &events {
         if !ALLOWED_WEBHOOK_EVENTS.contains(&event.as_str()) {
             tracing::warn!("Unknown webhook event: {}", event);
@@ -702,7 +664,6 @@ pub async fn create_webhook(
         }
     }
 
-    // Generate HMAC secret: "whsec_" + 32 random bytes hex.
     let mut raw_bytes = [0u8; 32];
     OsRng.fill_bytes(&mut raw_bytes);
     let secret = format!("whsec_{}", hex::encode(raw_bytes));
@@ -732,7 +693,6 @@ pub async fn create_webhook(
     }))
 }
 
-/// Lists all webhook subscriptions for the authenticated user.
 pub async fn list_webhooks(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -771,7 +731,6 @@ pub async fn list_webhooks(
     Ok(Json(webhooks))
 }
 
-/// Deletes a webhook subscription. Only the owning user may delete their own.
 pub async fn delete_webhook(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -792,15 +751,11 @@ pub async fn delete_webhook(
     }
 }
 
-// ── Password Reset ────────────────────────────────────────────────────────────
-
 #[derive(Deserialize)]
 pub struct ForgotPasswordRequest {
     pub email: String,
 }
 
-/// Issues a password reset token and sends an email via Resend.
-/// Always returns 200 to avoid leaking whether the email is registered.
 pub async fn forgot_password(
     State(state): State<AppState>,
     Json(req): Json<ForgotPasswordRequest>,
@@ -814,14 +769,13 @@ pub async fn forgot_password(
 
     let user = match user {
         Ok(Some(u)) => u,
-        Ok(None) => return StatusCode::OK, // Don't reveal missing accounts
+        Ok(None) => return StatusCode::OK,
         Err(e) => {
             tracing::error!("DB error in forgot_password: {:?}", e);
             return StatusCode::INTERNAL_SERVER_ERROR;
         }
     };
 
-    // Generate a cryptographically random 32-byte token.
     let mut raw = [0u8; 32];
     OsRng.fill_bytes(&mut raw);
     let token = hex::encode(raw);
@@ -832,7 +786,6 @@ pub async fn forgot_password(
 
     let expires_at = Utc::now() + chrono::Duration::hours(1);
 
-    // Invalidate any existing unused tokens for this user before inserting.
     let _ = sqlx::query(
         "UPDATE password_reset_tokens SET used_at = now()
          WHERE user_id = $1 AND used_at IS NULL AND expires_at > now()",
@@ -905,7 +858,6 @@ pub struct ResetPasswordRequest {
     pub new_password: String,
 }
 
-/// Validates a reset token and updates the user's password.
 pub async fn reset_password(
     State(state): State<AppState>,
     Json(req): Json<ResetPasswordRequest>,
@@ -913,7 +865,6 @@ pub async fn reset_password(
     use sha2::{Digest, Sha256};
     let token_hash = hex::encode(Sha256::digest(req.token.as_bytes()));
 
-    // Fetch valid, unused token.
     let row = sqlx::query(
         "SELECT id, user_id FROM password_reset_tokens
          WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()",
@@ -935,7 +886,6 @@ pub async fn reset_password(
     let token_id: Uuid = row.get("id");
     let user_id: Uuid = row.get("user_id");
 
-    // Validate new password strength.
     if SecurityConfig::default()
         .validate_password(&req.new_password)
         .is_err()
@@ -951,7 +901,6 @@ pub async fn reset_password(
         }
     };
 
-    // Update password.
     if let Err(e) = sqlx::query("UPDATE users SET password_hash = $1 WHERE id = $2")
         .bind(&password_hash)
         .bind(user_id)
@@ -962,7 +911,6 @@ pub async fn reset_password(
         return StatusCode::INTERNAL_SERVER_ERROR;
     }
 
-    // Mark token as used.
     let _ = sqlx::query("UPDATE password_reset_tokens SET used_at = now() WHERE id = $1")
         .bind(token_id)
         .execute(&state.pool)

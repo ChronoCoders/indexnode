@@ -67,8 +67,6 @@ async fn main() -> Result<()> {
         .context("CREDIT_CONTRACT_ADDRESS must be set")?
         .parse::<Address>()
         .context("CREDIT_CONTRACT_ADDRESS is not a valid Ethereum address")?;
-    // Wrap the private key in Zeroizing so the heap memory is zeroed when the
-    // String is dropped (i.e., after the CreditManager/Marketplace clients are built).
     let credit_private_key =
         Zeroizing::new(env::var("CREDIT_PRIVATE_KEY").context("CREDIT_PRIVATE_KEY must be set")?);
 
@@ -83,8 +81,6 @@ async fn main() -> Result<()> {
         .context("MARKETPLACE_CONTRACT_ADDRESS is not a valid Ethereum address")?;
     let marketplace =
         MarketplaceClient::new(&rpc_url, marketplace_contract_addr, &credit_private_key).await?;
-
-    // credit_private_key goes out of scope here (dropped and zeroed).
 
     let ai_extractor_worker = env::var("ANTHROPIC_API_KEY")
         .ok()
@@ -119,7 +115,6 @@ async fn main() -> Result<()> {
         }
     };
 
-    // Shutdown signal shared between the server and the worker thread.
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 
     let worker_pool = pool.clone();
@@ -230,9 +225,6 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-/// Handles GraphQL queries and mutations.
-/// Injects the authenticated user ID and role into the schema context so resolvers
-/// can access them via `ctx.data_opt::<Uuid>()` and `ctx.data_opt::<UserRole>()`.
 async fn graphql_handler(
     schema: Extension<AppSchema>,
     user_id: Option<Extension<Uuid>>,
@@ -249,7 +241,6 @@ async fn graphql_handler(
     schema.execute(request).await.into()
 }
 
-/// Serves the GraphQL Playground UI.
 async fn graphql_playground() -> impl IntoResponse {
     Html(playground_source(
         GraphQLPlaygroundConfig::new("/graphql").subscription_endpoint("/graphql/ws"),
@@ -262,8 +253,6 @@ async fn metrics_handler(
     handle.render()
 }
 
-/// Stateful service handles passed into `process_blockchain_index`.
-/// Grouping them avoids exceeding Clippy's `too_many_arguments` limit (7).
 struct IndexerServices<'a> {
     chain_clients: &'a HashMap<String, BlockchainClient>,
     ipfs: &'a IpfsStorage,
@@ -336,7 +325,6 @@ async fn run_worker(
             break;
         }
 
-        // Retry any pending on-chain Merkle commits before processing new jobs.
         if let Err(e) = retry_pending_commits(timestamp_client.as_ref(), &pool).await {
             tracing::error!("retry_pending_commits error: {:?}", e);
         }
@@ -407,10 +395,6 @@ async fn run_worker(
                                                 );
                                             }
                                             Ok(_) => {
-                                                // credit_balance was already debited at submission
-                                                // time (handlers.rs / schema.rs). Only roll the
-                                                // total_spent counter forward here on confirmed
-                                                // on-chain spend.
                                                 if let Err(e) = sqlx::query(
                                                     "UPDATE user_credits SET total_spent = total_spent + $1 WHERE user_id = $2"
                                                 )
@@ -530,18 +514,13 @@ async fn run_worker(
     Ok(())
 }
 
-/// Outcome of a blockchain indexing run.
 enum IndexResult {
-    /// All events indexed and Merkle root committed on-chain.
     Completed,
-    /// Events indexed but the on-chain commit failed; queued for retry.
     PendingCommit,
 }
 
 const MAX_COMMIT_RETRIES: i32 = 5;
 
-/// Retries any pending on-chain Merkle commits that are due (next_retry_at <= now()).
-/// Uses exponential backoff: 30s * 2^attempt (30s, 60s, 120s, 240s, 480s).
 async fn retry_pending_commits(
     timestamp_client: Option<&TimestampClient>,
     pool: &sqlx::PgPool,
@@ -590,7 +569,6 @@ async fn retry_pending_commits(
                         continue;
                     }
 
-                    // Stamp the batch Merkle root onto all events in this job.
                     if let Err(e) = sqlx::query(
                         "UPDATE blockchain_events SET merkle_root = $1 WHERE job_id = $2 AND merkle_root IS NULL",
                     )
@@ -689,7 +667,6 @@ async fn retry_pending_commits(
                 }
             },
             None => {
-                // No timestamp client — cannot commit. Fail immediately rather than spinning.
                 let _ = sqlx::query(
                     "UPDATE pending_merkle_commits
                      SET status = 'failed', last_error = 'TimestampRegistry not configured'
@@ -766,9 +743,6 @@ async fn process_blockchain_index(
                     );
                 }
                 Ok(_) => {
-                    // credit_balance was already debited at submission time
-                    // (schema.rs::create_blockchain_job). Only roll the
-                    // total_spent counter forward here on confirmed on-chain spend.
                     if let Err(e) = sqlx::query(
                         "UPDATE user_credits SET total_spent = total_spent + $1 WHERE user_id = $2",
                     )
@@ -790,7 +764,6 @@ async fn process_blockchain_index(
         .context("Invalid contract address")?;
     let to_block = params.to_block.unwrap_or(client.get_latest_block().await?);
 
-    // Fetch events for every requested event signature.
     let mut all_events = Vec::new();
     for event_sig in &params.events {
         let filter = EventFilter {
@@ -816,7 +789,6 @@ async fn process_blockchain_index(
 
     let enable_ai = params.enable_ai;
     let extraction_schema = params.extraction_schema.clone();
-    // Default budget: 100,000 tokens per job when AI is enabled.
     let mut tokens_remaining: u32 = params.ai_token_budget.unwrap_or(100_000);
 
     for mut event in all_events {
@@ -921,7 +893,6 @@ async fn process_blockchain_index(
         indexed_event_ids.push(event_id);
     }
 
-    // Compute and commit the batch Merkle root on-chain.
     if !all_content_hashes.is_empty() {
         let merkle_root = compute_merkle_root(&all_content_hashes);
 
@@ -977,7 +948,6 @@ async fn process_blockchain_index(
                     );
                 }
                 Err(e) => {
-                    // Indexing succeeded but commit failed. Queue for retry.
                     tracing::error!(
                         "Job {}: on-chain Merkle commitment failed; queuing for retry: {:?}",
                         job.id,
@@ -1009,8 +979,6 @@ async fn process_blockchain_index(
                     job.id,
                     merkle_root
                 );
-                // No client means no retries are possible. Return Completed so the
-                // job isn't stuck; the data is indexed and available.
             }
         }
     }
@@ -1018,12 +986,7 @@ async fn process_blockchain_index(
     Ok(IndexResult::Completed)
 }
 
-// ── Webhook dispatch ──────────────────────────────────────────────────────────
-
-/// Fires HMAC-SHA256-signed webhook callbacks for all active subscriptions
 /// matching `event` for `user_id`. Errors are logged and never propagated —
-/// delivery is best-effort. The request body is the same JSON payload for
-/// all subscribers; only the signature differs (per-secret).
 async fn fire_webhooks(pool: &sqlx::PgPool, job_id: Uuid, user_id: Uuid, event: &str) {
     use sqlx::Row;
 
@@ -1123,9 +1086,6 @@ async fn fire_webhooks(pool: &sqlx::PgPool, job_id: Uuid, user_id: Uuid, event: 
     }
 }
 
-/// HMAC-SHA256 computed in-house to avoid an extra crate dependency.
-/// Follows RFC 2104: HMAC(K, m) = H((K' ⊕ opad) ∥ H((K' ⊕ ipad) ∥ m))
-/// where K' is the key zero-padded to the hash block size (64 bytes for SHA-256).
 fn hmac_sha256(key: &[u8], message: &[u8]) -> Vec<u8> {
     use sha2::{Digest, Sha256};
     const BLOCK: usize = 64;

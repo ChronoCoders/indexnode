@@ -8,11 +8,6 @@ use std::io::Cursor;
 const PINATA_API_BASE: &str = "https://api.pinata.cloud";
 const PINATA_GATEWAY: &str = "https://gateway.pinata.cloud/ipfs";
 
-/// IPFS storage backed by either Pinata (when a JWT is configured) or a
-/// self-hosted IPFS daemon. When Pinata is configured all store / pin /
-/// unpin / retrieve operations go through Pinata's HTTP API and gateway,
-/// giving third-party persistence. Without a JWT, the local daemon at
-/// `api_url` is used and content lives only on that node.
 pub struct IpfsStorage {
     backend: Backend,
 }
@@ -23,8 +18,6 @@ enum Backend {
         jwt: String,
     },
     Local {
-        // Boxed because the hyper-backed IPFS client is ~10x the size of the
-        // Pinata HTTP variant; keeping it on the heap balances the enum.
         client: Box<IpfsClient>,
     },
 }
@@ -36,9 +29,6 @@ struct PinFileResponse {
 }
 
 impl IpfsStorage {
-    /// Creates a new `IpfsStorage`. If `pinata_jwt` is `Some`, all operations
-    /// are routed through Pinata. Otherwise they go to the local IPFS daemon
-    /// at `api_url`.
     pub fn new(api_url: &str, pinata_jwt: Option<String>) -> Result<Self> {
         let backend = match pinata_jwt {
             Some(jwt) if !jwt.is_empty() => Backend::Pinata {
@@ -63,7 +53,6 @@ impl IpfsStorage {
         Ok(Self { backend })
     }
 
-    /// Uploads raw bytes and returns the resulting CID. On Pinata this also
     /// pins the content as a side effect of the upload.
     pub async fn store_content(&self, data: &[u8]) -> Result<String> {
         match &self.backend {
@@ -105,8 +94,6 @@ impl IpfsStorage {
         }
     }
 
-    /// Retrieves content for a CID. On Pinata this fetches via the public
-    /// gateway; locally it uses the daemon's `cat` API.
     pub async fn retrieve_content(&self, cid: &str) -> Result<Vec<u8>> {
         match &self.backend {
             Backend::Pinata { http, .. } => {
@@ -138,9 +125,6 @@ impl IpfsStorage {
         }
     }
 
-    /// Ensures the given CID is pinned. On Pinata this calls `pinByHash` (a
-    /// no-op for content already uploaded via `store_content`, useful when
-    /// re-pinning an externally-produced CID). Locally it pins on the daemon.
     pub async fn pin_content(&self, cid: &str) -> Result<()> {
         match &self.backend {
             Backend::Pinata { http, jwt } => {
@@ -155,7 +139,6 @@ impl IpfsStorage {
                 if status.is_success() {
                     return Ok(());
                 }
-                // pinByHash returns 4xx when the CID is already pinned by this
                 // account. Treat that as success — the pin invariant holds.
                 let body = resp.text().await.unwrap_or_default();
                 if body.contains("already pinned") {
@@ -173,7 +156,6 @@ impl IpfsStorage {
         }
     }
 
-    /// Removes the pin for the given CID.
     pub async fn unpin_content(&self, cid: &str) -> Result<()> {
         match &self.backend {
             Backend::Pinata { http, jwt } => {

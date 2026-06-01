@@ -34,7 +34,6 @@ impl InputValidator {
             Some(Host::Ipv4(addr)) => reject_private_ipv4(addr)?,
             Some(Host::Ipv6(addr)) => reject_private_ipv6(addr)?,
             Some(Host::Domain(host)) => {
-                // Resolve and check every address the hostname maps to.
                 let port = parsed.port_or_known_default().unwrap_or(80);
                 let addrs = tokio::net::lookup_host((host, port))
                     .await
@@ -74,12 +73,11 @@ impl InputValidator {
 }
 
 fn reject_private_ipv4(addr: Ipv4Addr) -> Result<()> {
-    if addr.is_loopback()       // 127.0.0.0/8
-        || addr.is_private()    // 10/8, 172.16/12, 192.168/16
-        || addr.is_link_local() // 169.254.0.0/16
-        || addr.is_unspecified() // 0.0.0.0
+    if addr.is_loopback()
+        || addr.is_private()
+        || addr.is_link_local()
+        || addr.is_unspecified()
         || addr.is_broadcast()
-    // 255.255.255.255
     {
         anyhow::bail!("Private/reserved IP addresses not allowed");
     }
@@ -87,19 +85,16 @@ fn reject_private_ipv4(addr: Ipv4Addr) -> Result<()> {
 }
 
 fn reject_private_ipv6(addr: Ipv6Addr) -> Result<()> {
-    if addr.is_loopback()        // ::1
+    if addr.is_loopback()
         || addr.is_unspecified()
-    // ::
     {
         anyhow::bail!("Private/reserved IP addresses not allowed");
     }
     let seg = addr.segments();
     if (seg[0] & 0xfe00) == 0xfc00 {
-        // fc00::/7 — unique local
         anyhow::bail!("Private/reserved IP addresses not allowed");
     }
     if (seg[0] & 0xffc0) == 0xfe80 {
-        // fe80::/10 — link-local
         anyhow::bail!("Private/reserved IP addresses not allowed");
     }
     Ok(())

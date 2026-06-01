@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS crawler_sessions (
  
 CREATE INDEX IF NOT EXISTS idx_crawler_sessions_job ON crawler_sessions(job_id); 
  
--- Add require_javascript, use_proxy, and captcha_site_key to jobs if they don't exist
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='jobs' AND column_name='require_javascript') THEN 
