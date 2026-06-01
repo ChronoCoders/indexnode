@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
@@ -6,7 +5,6 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../TimestampRegistry.sol";
 
-/// @dev Minimal V2 used only to exercise the UUPS upgrade authorization path.
 contract TimestampRegistryV2 is TimestampRegistry {
     function version() external pure returns (string memory) {
         return "v2";
@@ -50,14 +48,11 @@ contract TimestampRegistryTest is Test {
         assertEq(registry.verifyHash(keccak256("nope")), 0);
     }
 
-    // ── UUPS upgrade authorization ────────────────────────────────────────────
-
     function test_upgrade_authorized_by_owner() public {
         TimestampRegistryV2 v2 = new TimestampRegistryV2();
         vm.prank(OWNER);
         registry.upgradeToAndCall(address(v2), "");
 
-        // After upgrade, the proxy now exposes v2's surface.
         assertEq(TimestampRegistryV2(address(registry)).version(), "v2");
     }
 

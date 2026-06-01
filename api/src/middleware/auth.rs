@@ -2,24 +2,10 @@ use crate::auth;
 use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 use sqlx::PgPool;
 
-/// Extracts and validates a Bearer token from the `Authorization` header.
-///
-/// Two authentication modes are supported:
-///
-/// - **API key** — token starts with `ink_`. The SHA-256 hash of the raw key
-///   is looked up in `api_keys`. On success, `last_used_at` is updated
-///   asynchronously so the lookup path is not blocked by a write.
-///
-/// - **JWT** — any other token. Validated with `auth::validate_token`.
-///
-/// On success, the authenticated `Uuid` user ID and `UserRole` are inserted
-/// into request extensions so downstream handlers and GraphQL resolvers can
-/// access them via `Extension<Uuid>` / `Extension<UserRole>`.
 pub async fn require_auth(mut req: Request, next: Next) -> Result<Response, StatusCode> {
     let token = extract_token(&req).ok_or(StatusCode::UNAUTHORIZED)?;
 
     if token.starts_with("ink_") {
-        // API key path — pool is available via Extension added in main.rs.
         let pool = req
             .extensions()
             .get::<PgPool>()
@@ -46,7 +32,6 @@ pub async fn require_auth(mut req: Request, next: Next) -> Result<Response, Stat
 
         let user_id: uuid::Uuid = row.get("user_id");
 
-        // Update last_used_at without blocking the request.
         let pool_clone = pool.clone();
         let hash_clone = key_hash.clone();
         tokio::spawn(async move {
@@ -63,7 +48,6 @@ pub async fn require_auth(mut req: Request, next: Next) -> Result<Response, Stat
         req.extensions_mut().insert(user_id);
         req.extensions_mut().insert(crate::auth::UserRole::User);
     } else {
-        // JWT path.
         let info = auth::validate_token(&token).map_err(|e| {
             tracing::warn!("Authentication failed: {}", e);
             StatusCode::UNAUTHORIZED

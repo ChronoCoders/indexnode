@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
@@ -22,15 +21,11 @@ contract CreditTokenTest is Test {
 
     function setUp() public {
         token = new CreditToken(ECOSYSTEM, TEAM, TREASURY, PUBLIC_SALE, INVESTORS, LIQUIDITY);
-        // Fund Alice from the ecosystem allocation so she has tokens to lock.
         vm.prank(ECOSYSTEM);
         token.transfer(ALICE, ALICE_INC);
     }
 
-    // ── Deployment ────────────────────────────────────────────────────────────
-
     function test_distribution_matches_allocations() public view {
-        // ECOSYSTEM started with 300M but seeded ALICE_INC to Alice in setUp.
         assertEq(token.balanceOf(ECOSYSTEM),   token.ECOSYSTEM_ALLOC()   - ALICE_INC);
         assertEq(token.balanceOf(TEAM),        token.TEAM_ALLOC());
         assertEq(token.balanceOf(TREASURY),    token.TREASURY_ALLOC());
@@ -49,8 +44,6 @@ contract CreditTokenTest is Test {
         assertEq(token.EVENT_INDEX_COST(),  50e18);
     }
 
-    // ── purchaseCredits ───────────────────────────────────────────────────────
-
     function test_purchaseCredits_locks_tokens_and_credits_user() public {
         uint256 amount = 200e18;
         uint256 contractBalBefore = token.balanceOf(address(token));
@@ -64,7 +57,6 @@ contract CreditTokenTest is Test {
     }
 
     function test_purchaseCredits_reverts_when_insufficient_balance() public {
-        // Bob has zero INC.
         vm.prank(BOB);
         vm.expectRevert(bytes("Insufficient token balance"));
         token.purchaseCredits(1e18);
@@ -75,8 +67,6 @@ contract CreditTokenTest is Test {
         vm.expectRevert(bytes("Amount must be greater than zero"));
         token.purchaseCredits(0);
     }
-
-    // ── spendCredits ──────────────────────────────────────────────────────────
 
     function test_spendCredits_burns_from_contract_and_decrements_user() public {
         uint256 amount = 200e18;
@@ -112,8 +102,6 @@ contract CreditTokenTest is Test {
         token.spendCredits(ALICE, 11e18, "http_crawl");
     }
 
-    // ── withdrawCredits ───────────────────────────────────────────────────────
-
     function test_withdrawCredits_returns_tokens_to_user() public {
         uint256 amount = 200e18;
         vm.prank(ALICE);
@@ -136,7 +124,6 @@ contract CreditTokenTest is Test {
     // ── Invariant ─────────────────────────────────────────────────────────────
 
     function test_invariant_contract_balance_matches_total_credits() public {
-        // After a series of purchase/spend/withdraw operations, the locked
         // ERC-20 balance must equal the sum of every user's creditBalance.
         vm.prank(ECOSYSTEM);
         token.transfer(BOB, 500e18);

@@ -12,8 +12,6 @@ pub async fn check_credits(
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    // Require the user to be authenticated. The `require_auth` middleware must
-    // run before this middleware and insert the user ID into extensions.
     let user_id = req
         .extensions()
         .get::<uuid::Uuid>()

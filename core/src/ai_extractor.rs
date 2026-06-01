@@ -30,7 +30,6 @@ struct ClaudeResponse {
     usage: Option<UsageInfo>,
 }
 
-/// Result of a structured extraction, including the data and how many tokens were consumed.
 pub struct ExtractionResult {
     pub data: serde_json::Value,
     pub tokens_used: u32,

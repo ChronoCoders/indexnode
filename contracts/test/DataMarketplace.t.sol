@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
@@ -7,15 +6,12 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import "../DataMarketplace.sol";
 import "../CreditToken.sol";
 
-/// @dev Minimal V2 used only to exercise the UUPS upgrade authorization path.
 contract DataMarketplaceV2 is DataMarketplace {
     function version() external pure returns (string memory) {
         return "v2";
     }
 }
 
-/// @dev Hand-rolled ERC20 that reenters DataMarketplace.purchaseDataset on the
-/// first `transferFrom`. Used to confirm the `nonReentrant` guard fires.
 contract ReentrantToken {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
@@ -87,12 +83,9 @@ contract DataMarketplaceTest is Test {
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), data);
         marketplace = DataMarketplace(address(proxy));
 
-        // Fund the buyer so it can actually pay.
         vm.prank(ECOSYSTEM);
         inc.transfer(BUYER, 10_000e18);
     }
-
-    // ── createListing ─────────────────────────────────────────────────────────
 
     function test_createListing_stores_listing() public {
         vm.prank(SELLER);
@@ -112,8 +105,6 @@ contract DataMarketplaceTest is Test {
         marketplace.createListing("QmCid", "ipfs://meta", 0);
     }
 
-    // ── purchaseDataset ───────────────────────────────────────────────────────
-
     function test_purchaseDataset_happy_path() public {
         uint256 price = 100e18;
         vm.prank(SELLER);
@@ -128,7 +119,6 @@ contract DataMarketplaceTest is Test {
         vm.prank(BUYER);
         marketplace.purchaseDataset(1);
 
-        // platformFeePercent defaults to 5 → fee = 5e18, sellerShare = 95e18
         assertEq(inc.balanceOf(SELLER),             sellerBefore + 95e18);
         assertEq(inc.balanceOf(BUYER),              buyerBefore  - price);
         assertEq(inc.balanceOf(address(marketplace)), 5e18);
@@ -149,7 +139,6 @@ contract DataMarketplaceTest is Test {
         vm.prank(BUYER);
         marketplace.purchaseDataset(1);
 
-        // fee = (5 * 100e18) / 100 = 5e18 exactly (no truncation at this price).
         assertEq(inc.balanceOf(address(marketplace)), 5e18);
         assertEq(inc.balanceOf(SELLER),             95e18);
     }
@@ -178,7 +167,6 @@ contract DataMarketplaceTest is Test {
     }
 
     function test_purchaseDataset_nonReentrant_blocks_reentry() public {
-        // Spin up a fresh marketplace with the reentrant token as payment.
         ReentrantToken bad = new ReentrantToken();
         DataMarketplace impl = new DataMarketplace();
         bytes memory data = abi.encodeCall(DataMarketplace.initialize, (address(bad), OWNER));
@@ -194,19 +182,10 @@ contract DataMarketplaceTest is Test {
         vm.prank(ATTACKER);
         bad.approve(address(mkt), 1_000e18);
 
-        // The first `safeTransferFrom` inside purchaseDataset triggers the
-        // token's transferFrom, which calls back into purchaseDataset. The
-        // outer call's nonReentrant guard rejects the inner call, and the
-        // revert bubbles up through SafeERC20.
         vm.prank(ATTACKER);
         vm.expectRevert(bytes("ReentrancyGuard: reentrant call"));
         mkt.purchaseDataset(1);
     }
-
-    // ── deactivateListing ─────────────────────────────────────────────────────
-    // NOTE: deactivation is gated on the LISTING owner (seller), not the
-    // contract owner. The audit task referred to this as "owner" — we test
-    // the actual contract semantics.
 
     function test_deactivateListing_by_seller() public {
         vm.prank(SELLER);
@@ -227,8 +206,6 @@ contract DataMarketplaceTest is Test {
         vm.expectRevert(bytes("Not listing owner"));
         marketplace.deactivateListing(1);
     }
-
-    // ── withdrawFees ──────────────────────────────────────────────────────────
 
     function test_withdrawFees_transfers_accumulated_fees() public {
         vm.prank(SELLER);
@@ -253,8 +230,6 @@ contract DataMarketplaceTest is Test {
         );
         marketplace.withdrawFees(BUYER);
     }
-
-    // ── UUPS upgrade authorization ────────────────────────────────────────────
 
     function test_upgrade_authorized_by_owner() public {
         DataMarketplaceV2 v2 = new DataMarketplaceV2();

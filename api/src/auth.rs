@@ -4,7 +4,6 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Role carried inside the JWT and inserted into request extensions by `require_auth`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum UserRole {
@@ -37,7 +36,6 @@ impl std::str::FromStr for UserRole {
     }
 }
 
-/// The data returned after successfully validating a JWT.
 #[derive(Debug, Clone)]
 pub struct AuthInfo {
     pub user_id: Uuid,
@@ -55,9 +53,6 @@ fn jwt_secret() -> Result<String> {
     std::env::var("JWT_SECRET").context("JWT_SECRET environment variable must be set")
 }
 
-/// Creates a signed JWT for the given user.
-/// `role` is the user's role string (e.g. "user", "admin").
-/// `remember_me` extends the expiry from 24 hours to 30 days.
 pub fn create_token(user_id: Uuid, role: &str, remember_me: bool) -> Result<String> {
     let secret = jwt_secret()?;
 
@@ -87,13 +82,9 @@ pub fn create_token(user_id: Uuid, role: &str, remember_me: bool) -> Result<Stri
     Ok(token)
 }
 
-/// Validates a JWT Bearer token and returns the authenticated user's ID and role.
-/// Returns an error if the token is missing, malformed, expired, or signed with the wrong secret.
 pub fn validate_token(token: &str) -> Result<AuthInfo> {
     let secret = jwt_secret()?;
 
-    // Pin to HS256 explicitly so tokens claiming alg=none or any asymmetric
-    // algorithm are rejected, regardless of how jsonwebtoken's defaults evolve.
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
 

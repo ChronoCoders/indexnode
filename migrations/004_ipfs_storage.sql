@@ -12,7 +12,6 @@ CREATE INDEX IF NOT EXISTS idx_ipfs_cid ON ipfs_content(cid);
 CREATE INDEX IF NOT EXISTS idx_ipfs_hash ON ipfs_content(content_hash); 
 CREATE INDEX IF NOT EXISTS idx_ipfs_event ON ipfs_content(blockchain_event_id); 
  
--- Add ipfs_cid to blockchain_events if it doesn't exist
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='blockchain_events' AND column_name='ipfs_cid') THEN 

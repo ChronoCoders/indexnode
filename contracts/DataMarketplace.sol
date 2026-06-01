@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -7,14 +6,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/**
- * @title DataMarketplace
- * @notice UUPS-upgradeable marketplace for buying and selling indexed datasets.
- *         Payment is made in INC (CreditToken).
- */
 contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     using SafeERC20 for IERC20;
-    // ── Reentrancy guard ──────────────────────────────────────────────────────
     uint256 private _reentrancyStatus;
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED     = 2;
@@ -25,7 +18,6 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _;
         _reentrancyStatus = _NOT_ENTERED;
     }
-    // NOTE: Only INC is supported as the payment token for now.
     IERC20 public paymentToken;
     uint256 public platformFeePercent;
 
@@ -54,13 +46,11 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     mapping(uint256 => Purchase) public purchases;
     mapping(address => uint256)  public sellerReputation;
 
-    // ── Events ────────────────────────────────────────────────────────────────
     event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 price);
     event ListingDeactivated(uint256 indexed listingId);
     event DatasetPurchased(uint256 indexed listingId, uint256 indexed purchaseId, address indexed buyer);
     event ReputationUpdated(address indexed seller, uint256 newScore);
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
@@ -73,8 +63,6 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         paymentToken       = IERC20(_paymentToken);
         platformFeePercent = 5;
     }
-
-    // ── Marketplace logic ─────────────────────────────────────────────────────
 
     function createListing(
         string calldata datasetCID,
@@ -108,11 +96,6 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(l.active, "Listing not active");
         require(l.seller != msg.sender, "Cannot buy own listing");
 
-        // ── Effects ──────────────────────────────────────────────────────────
-        // All state writes happen before the external transfers. nonReentrant
-        // already prevents reentrancy, but CEI is the correct pattern and
-        // future-proofs the function against modifier removal or custom token
-        // hooks.
         purchaseCount++;
         purchases[purchaseCount] = Purchase({
             listingId:   listingId,
@@ -124,9 +107,6 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         l.sales++;
         sellerReputation[l.seller]++;
 
-        // ── Interactions ─────────────────────────────────────────────────────
-        // Fee rounds down (Solidity integer division truncates toward zero).
-        // For e.g. price=99 and platformFeePercent=5, fee=4 (not 4.95). The
         // remainder stays with the buyer — the contract never receives more
         // than `fee`. The invariant `sellerShare + fee <= l.price` always
         // holds, with at most 1 wei of difference at the rounding boundary.
@@ -154,9 +134,7 @@ contract DataMarketplace is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         paymentToken.safeTransfer(to, bal);
     }
 
-    // ── UUPS ──────────────────────────────────────────────────────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    // ── Storage gap ───────────────────────────────────────────────────────────
     uint256[50] private __gap;
 }

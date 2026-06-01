@@ -1,12 +1,8 @@
--- Dead-letter queue for failed on-chain Merkle root commitments.
--- A row is inserted here when TimestampRegistry.commitHash() fails for a job.
--- The worker retries with exponential backoff up to MAX_RETRIES times.
--- status: 'pending' | 'committed' | 'failed'
 CREATE TABLE IF NOT EXISTS pending_merkle_commits (
     id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id       UUID        NOT NULL REFERENCES jobs(id),
     merkle_root  TEXT        NOT NULL,
-    event_chain  TEXT        NOT NULL,  -- blockchain the events came from (e.g. 'ethereum', 'polygon')
+    event_chain  TEXT        NOT NULL,
     attempt_count INT        NOT NULL DEFAULT 0,
     next_retry_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_error   TEXT,
