@@ -43,15 +43,30 @@ struct ContentBlock {
 pub struct AIExtractor {
     client: Client,
     api_key: String,
+    model: String,
 }
 
 impl AIExtractor {
     pub fn new(api_key: String) -> Result<Self> {
+        // The identifier is deliberately absent from the repository, so there is
+        // no default to fall back on. The caller builds this at startup, which is
+        // where a missing value surfaces.
+        let model = std::env::var("ANTHROPIC_MODEL")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .context(
+                "ANTHROPIC_MODEL is not set. It is sent as the model identifier \
+                 and there is no default.",
+            )?;
         let client = Client::builder()
             .timeout(std::time::Duration::from_secs(60))
             .build()
             .context("Failed to create HTTP client")?;
-        Ok(Self { client, api_key })
+        Ok(Self {
+            client,
+            api_key,
+            model,
+        })
     }
 
     pub async fn extract_structured_data(
@@ -65,7 +80,7 @@ impl AIExtractor {
         );
 
         let request = MessagesRequest {
-            model: "${ANTHROPIC_MODEL}".to_string(),
+            model: self.model.clone(),
             max_tokens: 4096,
             messages: vec![Message {
                 role: "user".to_string(),
@@ -125,7 +140,7 @@ impl AIExtractor {
         );
 
         let request = MessagesRequest {
-            model: "${ANTHROPIC_MODEL}".to_string(),
+            model: self.model.clone(),
             max_tokens: 1024,
             messages: vec![Message {
                 role: "user".to_string(),
@@ -167,7 +182,7 @@ impl AIExtractor {
         );
 
         let request = MessagesRequest {
-            model: "${ANTHROPIC_MODEL}".to_string(),
+            model: self.model.clone(),
             max_tokens: 100,
             messages: vec![Message {
                 role: "user".to_string(),
@@ -207,10 +222,29 @@ impl AIExtractor {
 mod tests {
     use super::*;
 
+    // The three cases share one test because they mutate the process
+    // environment, which cargo's test threads share.
     #[tokio::test]
-    async fn test_ai_extractor_init() -> Result<()> {
+    async fn test_model_identifier_comes_from_the_environment() -> Result<()> {
+        std::env::remove_var("ANTHROPIC_MODEL");
+        // Matched rather than unwrapped: unwrap_err would require Debug on
+        // AIExtractor, which holds the API key.
+        let message = match AIExtractor::new("test-key".to_string()) {
+            Ok(_) => panic!("an unset identifier must refuse to build"),
+            Err(error) => format!("{error:#}"),
+        };
+        assert!(message.contains("ANTHROPIC_MODEL"), "{message}");
+
+        std::env::set_var("ANTHROPIC_MODEL", "   ");
+        assert!(
+            AIExtractor::new("test-key".to_string()).is_err(),
+            "a blank identifier must refuse to build"
+        );
+
+        std::env::set_var("ANTHROPIC_MODEL", "a-model-identifier");
         let extractor = AIExtractor::new("test-key".to_string())?;
         assert!(!extractor.api_key.is_empty());
+        assert_eq!(extractor.model, "a-model-identifier");
         Ok(())
     }
 }
